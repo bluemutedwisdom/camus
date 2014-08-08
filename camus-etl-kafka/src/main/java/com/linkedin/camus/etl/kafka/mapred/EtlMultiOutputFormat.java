@@ -1,11 +1,11 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.linkedin.camus.coders.Partitioner;
+import com.linkedin.camus.etl.RecordWriterProvider;
+import com.linkedin.camus.etl.kafka.coders.DefaultPartitioner;
+import com.linkedin.camus.etl.kafka.common.AvroRecordWriterProvider;
+import com.linkedin.camus.etl.kafka.common.DateUtils;
+import com.linkedin.camus.etl.kafka.common.EtlKey;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.OutputCommitter;
@@ -16,12 +16,11 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.format.DateTimeFormatter;
 
-import com.linkedin.camus.coders.Partitioner;
-import com.linkedin.camus.etl.RecordWriterProvider;
-import com.linkedin.camus.etl.kafka.coders.DefaultPartitioner;
-import com.linkedin.camus.etl.kafka.common.AvroRecordWriterProvider;
-import com.linkedin.camus.etl.kafka.common.DateUtils;
-import com.linkedin.camus.etl.kafka.common.EtlKey;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * MultipleAvroOutputFormat.
@@ -84,7 +83,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
                 .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS,
                         AvroRecordWriterProvider.class);
     }
-    
+
     public static RecordWriterProvider getRecordWriterProvider(JobContext job) {
         try
         {
@@ -133,7 +132,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static long getMonitorTimeGranularityMs(JobContext job) {
       return job.getConfiguration().getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10) * 60000L;
     }
-    
+
     public static void setEtlAvroWriterSyncInterval(JobContext job, int val) {
         job.getConfiguration().setInt(ETL_AVRO_WRITER_SYNC_INTERVAL, val);
     }
@@ -186,14 +185,14 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         Partitioner partitioner = getPartitioner(context, key.getTopic());
         return "data." + key.getTopic().replaceAll("\\.", "_") + "." + key.getLeaderId() + "." + key.getPartition() + "." + partitioner.encodePartition(context, key);
     }
-    
+
     public static void setDefaultPartitioner(JobContext job, Class<?> cls) {
       job.getConfiguration().setClass(ETL_DEFAULT_PARTITIONER_CLASS, cls, Partitioner.class);
     }
-    
+
     public static Partitioner getDefaultPartitioner(JobContext job) {
         return ReflectionUtils.newInstance(job.getConfiguration().getClass(ETL_DEFAULT_PARTITIONER_CLASS, DefaultPartitioner.class, Partitioner.class), job.getConfiguration());
-    }    
+    }
 
     public static Partitioner getPartitioner(JobContext job, String topicName) throws IOException {
         String customPartitionerProperty = ETL_DEFAULT_PARTITIONER_CLASS + "." + topicName;
