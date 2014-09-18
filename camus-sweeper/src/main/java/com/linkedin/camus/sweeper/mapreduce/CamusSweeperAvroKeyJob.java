@@ -8,6 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
+import org.apache.avro.Schema.Type;
+import org.apache.avro.SchemaParseException;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -17,24 +20,42 @@ import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.FsInput;
 import org.apache.avro.mapreduce.AvroJob;
 import org.apache.avro.mapreduce.AvroKeyOutputFormat;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.log4j.Logger;
+
+import com.linkedin.camus.sweeper.utils.RelaxedAvroKeyOutputFormat;
+import com.linkedin.camus.sweeper.utils.RelaxedAvroSerialization;
+import com.linkedin.camus.sweeper.utils.RelaxedSchemaUtils;
 
 public class CamusSweeperAvroKeyJob extends CamusSweeperJob
 {
+  private static final Log LOG =
+      LogFactory.getLog(CamusSweeperAvroKeyJob.class.getName());
+    
   @Override
   public void configureJob(String topic, Job job)
   {
+    boolean skipNameValidation = RelaxedSchemaUtils.skipNameValidation(job.getConfiguration());
+    if (skipNameValidation)
+    {
+      RelaxedAvroSerialization.addToConfiguration(job.getConfiguration());
+    }
+    
     // setting up our input format and map output types
     super.configureInput(job, AvroKeyCombineFileInputFormat.class, AvroKeyMapper.class, AvroKey.class, AvroValue.class);
 
     // setting up our output format and output types
-    super.configureOutput(job, AvroKeyOutputFormat.class, AvroKeyReducer.class, AvroKey.class, NullWritable.class);
+    super.configureOutput(job, 
+                          skipNameValidation ? RelaxedAvroKeyOutputFormat.class : AvroKeyOutputFormat.class, 
+                          AvroKeyReducer.class, 
+                          AvroKey.class, 
+                          NullWritable.class);
 
     // finding the newest file from our input. this file will contain the newest version of our avro
     // schema.
@@ -52,6 +73,7 @@ public class CamusSweeperAvroKeyJob extends CamusSweeperJob
     // job and set the key schema
     // to the newest input schema
     String keySchemaStr = getConfValue(job, topic, "camus.sweeper.avro.key.schema");
+    
     Schema keySchema;
     if (keySchemaStr == null || keySchemaStr.isEmpty())
     {
@@ -60,7 +82,13 @@ public class CamusSweeperAvroKeyJob extends CamusSweeperJob
     }
     else
     {
-      keySchema = new Schema.Parser().parse(keySchemaStr);
+      keySchema = RelaxedSchemaUtils.parseSchema(keySchemaStr, job.getConfiguration());
+      
+      if (! validateKeySchema(schema, keySchema))
+      {
+        job.setNumReduceTasks(0);
+        keySchema = schema;
+      }
     }
 
     setupSchemas(topic, job, schema, keySchema);
@@ -68,6 +96,41 @@ public class CamusSweeperAvroKeyJob extends CamusSweeperJob
     // setting the compression level. Only used if compression is enabled. default is 6
     job.getConfiguration().setInt(AvroOutputFormat.DEFLATE_LEVEL_KEY,
                                   job.getConfiguration().getInt(AvroOutputFormat.DEFLATE_LEVEL_KEY, 6));
+  }
+  
+  private boolean validateKeySchema(Schema schema, Schema keySchema)
+  {
+    for (Field fld : keySchema.getFields())
+    {
+      Field schemaFld = schema.getField(fld.name());
+
+      if (schemaFld == null)
+        return false;
+
+      Type fldType = fld.schema().getType();
+
+      if (fldType.equals(Type.UNION))
+      {
+        for (Schema s : fld.schema().getTypes())
+        {
+          if (s.getType().equals(Type.RECORD))
+          {
+            fldType = Type.RECORD;
+            break;
+          }
+        }
+      }
+
+      if (fldType.equals(Type.RECORD))
+      {
+        if (! validateKeySchema(schemaFld.schema(), fld.schema()))
+        {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   private void setupSchemas(String topic, Job job, Schema schema, Schema keySchema)
@@ -79,7 +142,8 @@ public class CamusSweeperAvroKeyJob extends CamusSweeperJob
     AvroJob.setMapOutputValueSchema(job, schema);
 
     Schema reducerSchema =
-        new Schema.Parser().parse(getConfValue(job, topic, "camus.output.schema", schema.toString()));
+        RelaxedSchemaUtils.parseSchema(getConfValue(job, topic, "camus.output.schema", schema.toString()),
+                                       job.getConfiguration());
     AvroJob.setOutputKeySchema(job, reducerSchema);
     log.info("Output Schema set to " + reducerSchema.toString());
   }
