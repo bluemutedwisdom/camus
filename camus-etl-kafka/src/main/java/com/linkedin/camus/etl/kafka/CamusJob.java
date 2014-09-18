@@ -169,6 +169,16 @@ public class CamusJob extends Configured implements Tool {
 		}
 	}
 
+    public void runFromAzkaban() throws Exception {
+        String camusPropertiesPath = System.getProperty("sun.java.command").split("-P ")[1];
+        Properties camusProperties = new Properties();
+        InputStream fis = new FileInputStream(camusPropertiesPath);
+        camusProperties.load(fis);
+        fis.close();
+        this.props.putAll(camusProperties);
+        run();
+    }
+
 	public void run() throws Exception {
 
 		startTiming("pre-setup");
