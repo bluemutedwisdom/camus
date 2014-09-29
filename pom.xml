@@ -59,12 +59,12 @@
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>1.7.3</version>
+                <version>1.7.7</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-mapred</artifactId>
-                <version>1.7.3</version>
+                <version>1.7.7</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
@@ -178,7 +178,7 @@
             <id>apache-releases</id>
             <url>https://repository.apache.org/content/groups/public</url>
         </repository>
-        
+
         <repository>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
