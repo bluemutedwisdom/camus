@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 public class CamusJob extends Configured implements Tool {
 
@@ -136,6 +137,13 @@ public class CamusJob extends Configured implements Tool {
 
 		String hadoopCacheJarDir = conf.get(
 				"hdfs.default.classpath.dir", null);
+
+		List<Pattern> jarFilterString = new ArrayList<Pattern>();
+
+		for (String str : Arrays.asList(conf.getStrings("cache.jar.filter.list"))){
+		  jarFilterString.add(Pattern.compile(str));
+		}
+
 		if (hadoopCacheJarDir != null) {
 			FileStatus[] status = fs.listStatus(new Path(hadoopCacheJarDir));
 
@@ -144,10 +152,18 @@ public class CamusJob extends Configured implements Tool {
 					if (!status[i].isDir()) {
 						log.info("Adding Jar to Distributed Cache Archive File:"
 								+ status[i].getPath());
+						boolean filterMatch = false;
+						for (Pattern p : jarFilterString){
+						  if (p.matcher(status[i].getPath().getName()).matches()){
+						    filterMatch = true;
+						    break;
+						  }
+						}
 
-						DistributedCache
-								.addFileToClassPath(status[i].getPath(),
-										conf, fs);
+						if (! filterMatch)
+              DistributedCache
+                .addFileToClassPath(status[i].getPath(),
+                    conf, fs);
 					}
 				}
 			} else {
@@ -163,7 +179,16 @@ public class CamusJob extends Configured implements Tool {
 			String[] jarFiles = externalJarList.split(",");
 			for (String jarFile : jarFiles) {
 				log.info("Adding external jar File:" + jarFile);
-				DistributedCache.addFileToClassPath(new Path(jarFile),
+				boolean filterMatch = false;
+        for (Pattern p : jarFilterString){
+          if (p.matcher(new Path(jarFile).getName()).matches()){
+            filterMatch = true;
+            break;
+          }
+        }
+
+        if (! filterMatch)
+				  DistributedCache.addFileToClassPath(new Path(jarFile),
 						conf, fs);
 			}
 		}
