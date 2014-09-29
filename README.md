@@ -1,4 +1,4 @@
-## *pronounced Cam-u* 
+## *pronounced Cam-oo* 
 
 # Intro
 Camus is LinkedIn's [Kafka](http://kafka.apache.org "Kafka")->HDFS pipeline. It is a mapreduce job that does distributed data loads out of Kafka. It includes the following features:
