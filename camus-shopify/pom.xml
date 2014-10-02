@@ -43,7 +43,18 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <includes>
+                                    <include>*</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>log4j:log4j:*</exclude>
+                                    <exclude>org.slf4j:*</exclude>
+                                    <exclude>commons-beanutils:commons-beanutils:*</exclude>
+                                    <exclude>com.github.sgroschupf:zkclient:*</exclude>
+                                    <exclude>org.mortbay.jetty:servlet-api:*</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
