@@ -349,7 +349,7 @@ public class CamusSweeper extends Configured implements Tool
 
       log.info("Setting reducer " + numReducers);
       job.setNumReduceTasks(numReducers);
-      job.getConfiguration().set("mapred.compress.map.output", "true");
+      job.getConfiguration().set("mapred.compress.map.output", "false");
 
       Path tmpPath = new Path(job.getConfiguration().get("tmp.path"));
       Path outputPath = new Path(job.getConfiguration().get("dest.path"));
