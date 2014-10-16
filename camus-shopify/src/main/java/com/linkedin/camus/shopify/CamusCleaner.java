@@ -23,6 +23,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
+import org.apache.log4j.Logger;
 
 import com.linkedin.camus.sweeper.utils.DateUtils;
 import com.linkedin.camus.sweeper.utils.Utils;

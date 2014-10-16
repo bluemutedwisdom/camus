@@ -79,12 +79,12 @@ public class CamusSweeperDatePartitionPlanner extends CamusSweeperPlanner
 
         if (!fs.exists(destPath))
         {
-          _log.info.println(topic + " dest dir " + directory + " doesn't exist or . Processing.");
+          _log.info(topic + " dest dir " + directory + " doesn't exist or . Processing.");
           jobPropsList.add(jobProps);
         }
         else
         {
-          _log.info.println(topic + " dest dir " + directory + " exists. Reprocessing.");
+          _log.info(topic + " dest dir " + directory + " exists. Reprocessing.");
           jobProps.put("input.paths", sourcePath.toString() + "," + destPath.toString());
           jobPropsList.add(jobProps);
         }
