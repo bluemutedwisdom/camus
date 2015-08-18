@@ -1,0 +1,8 @@
+{
+  "_public_key": "8bff0a932744632a51fdfe0f56a0bec4f381b83b27b04fdf7a551ffd06ab527a",
+  "webhdfs": "EJ[1:wjSQ6//3LrtqcjS5vrgJ33KTcEw9l/NpWiHfFWx1vmI=:2iar8JXuwnRNsNrZqp+RY46WvtYuKbGp:1ZBvSiVUbWeYcODhqXFtYk/LcynkqTSgrg8fQb6vfUOwjFyCc2SlbRJ8Bw==]",
+  "jobtracker": "EJ[1:wjSQ6//3LrtqcjS5vrgJ33KTcEw9l/NpWiHfFWx1vmI=:fRc4cf8JooZ/3OT/xaxXkdQl+XjAl+pH:dBJLvRbDF+2nv0d0I/pvSUnUmqOPJPMIzlU+Kb9rd4cbIEP0PkugQSQpM2XI0w==]",
+  "namenode": "EJ[1:wjSQ6//3LrtqcjS5vrgJ33KTcEw9l/NpWiHfFWx1vmI=:85BE6mI06L+nQyauz0Dnh4KOEzWzXz+L:iM1n6F4WJS96ZN0sHNtA+bfBaJSIrVIgNnI0lB51T94jArtpcJIGUz00folt]",
+  "hadoop_production": "EJ[1:wjSQ6//3LrtqcjS5vrgJ33KTcEw9l/NpWiHfFWx1vmI=:kxAgD59pKawqU65bia0zRdvydo4mYNb4:soKvxnva43WlRYQ2LE/Yo5sQa20HHT4ftRYhVACEZqLP]",
+  "oozie_url": "EJ[1:wjSQ6//3LrtqcjS5vrgJ33KTcEw9l/NpWiHfFWx1vmI=:klx6v05vn9E9oOSvvD9H22evn4baZOT2:KS8GxMY7opODeEoOdYfHXWGnmnd7nwrVwow3XV+zCVDkuNiwD4KWNHbAEEmpSCUrrqUub8ZMpm9G]"
+}

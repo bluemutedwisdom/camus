@@ -37,18 +37,18 @@ def get_camus_version(path):
 
 
 def main():
-    oozie = oozie_server.OozieServer('http://hadoop-misc4.chi.shopify.com:11000')
+    secrets = json.load(open(os.path.join(os.getcwd(), 'camus-shopify', 'oozie.json')))
+    oozie = oozie_server.OozieServer(secrets['oozie_url'])
 
     command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://hadoop-rm.chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
     command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
     command += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
     command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus.properties"'
 
-    #TODO change the email to camus@shopify.pagerduty.com
-    os.environ['WEBHDFS_HOST'] = 'hadoop-misc.chi.shopify.com'
-    os.environ['JOBTRACKER'] = 'hadoop-rm.chi.shopify.com:8032'
-    os.environ['NAMENODE'] = 'hdfs://hadoop-production:8020'
-    os.environ['HADOOP_PRODUCTION'] = 'hadoop-production'
+    os.environ['WEBHDFS_HOST'] = secrets['webhdfs']
+    os.environ['JOBTRACKER'] = secrets['jobtracker']
+    os.environ['NAMENODE'] = secrets['namenode']
+    os.environ['HADOOP_PRODUCTION'] = secrets['hadoop_production']
 
     # the workflow is the actual job runner
     oozie_wf = workflow.Workflow("Camus", "oren.mazor@shopify.com", path="user/oozie/workflows/")
