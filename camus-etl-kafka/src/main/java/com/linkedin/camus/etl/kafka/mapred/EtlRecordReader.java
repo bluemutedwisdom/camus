@@ -37,8 +37,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
   public static enum KAFKA_MSG {
     DECODE_SUCCESSFUL,
     SKIPPED_SCHEMA_NOT_FOUND,
-    SKIPPED_OTHER,
-    SKIPPED_NULL_RECORD
+    SKIPPED_OTHER
   };
 
   protected TaskAttemptContext context;
@@ -148,12 +147,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         throw new IOException(e);
       }
     } catch (Exception e) {
-      if (r == null) {
-        mapperContext.getCounter(KAFKA_MSG.SKIPPED_NULL_RECORD).increment(1);
-      } else {
-        mapperContext.getCounter(KAFKA_MSG.SKIPPED_OTHER).increment(1);
-      }
-
+      mapperContext.getCounter(KAFKA_MSG.SKIPPED_OTHER).increment(1);
       if (!skipSchemaErrors) {
         throw new IOException(e);
       }
@@ -298,7 +292,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
             wrapper = getWrappedRecord(message);
 
             if (wrapper == null) {
-              continue;
+              throw new RuntimeException("null record");
             }
           } catch (Exception e) {
             if (exceptionCount < getMaximumDecoderExceptionsToPrint(context)) {
