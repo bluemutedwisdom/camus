@@ -58,7 +58,7 @@ def main():
 
     # the coordinator handles the schedule
     starttime = datetime.now().strftime("%Y-%m-%dT%H:%MZ")
-    coordinator = coordinators.Coordinator("Camus", oozie_wf, 60 * 60, starttime)
+    coordinator = coordinators.Coordinator("Camus", oozie_wf, 60, starttime)
     coordinator.save()
 
     # the bundle is pretty in an OCD kind of way
