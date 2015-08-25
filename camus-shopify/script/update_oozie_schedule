@@ -51,7 +51,7 @@ def main():
     os.environ['HADOOP_PRODUCTION'] = secrets['hadoop_production']
 
     # the workflow is the actual job runner
-    oozie_wf = workflow.Workflow("Camus", "oren.mazor@shopify.com", path="user/oozie/workflow")
+    oozie_wf = workflow.Workflow("Camus", "data-engineering@shopify.com", path="user/oozie/workflow")
     camus_build = actions.ShellAction(name="CamusBuild", command="ssh", args=['azkaban@hadoop-misc4.chi.shopify.com', command], env=[]) 
     oozie_wf.add(camus_build)
     oozie_wf.save()
