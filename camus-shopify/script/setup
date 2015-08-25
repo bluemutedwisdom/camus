@@ -6,3 +6,4 @@ test -e .venv/bin/activate || virtualenv .venv --no-site-packages
 pip install azkaban==0.7.0
 bundle install
 bundle exec ejson decrypt camus-shopify/azkaban.ejson > camus-shopify/azkaban.json
+bundle exec ejson decrypt camus-shopify/oozie.ejson > camus-shopify/oozie.json
