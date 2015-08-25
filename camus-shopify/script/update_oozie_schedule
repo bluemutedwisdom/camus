@@ -62,6 +62,11 @@ def main():
     coordinator.save()
 
     # the bundle is pretty in an OCD kind of way
+    # suspend previous job. TODO: when bundle reloading becomes a thing in oozie, this will be better
+
+    for running in [bun for bun in oozie.bundles("RUNNING") if bun['bundleJobName'] == "Camus" and bun['status'] == "RUNNING"]:
+        oozie.set_status(running['bundleJobId'], 'suspend')
+
     bun = bundle.Bundle("Camus")
     bun.add(coordinator)
     bun.save()
