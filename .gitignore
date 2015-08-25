@@ -36,3 +36,4 @@ camus.zip
 
 # decrypted azkaban secrets
 camus-shopify/azkaban.json
+camus-shopify/oozie.json
