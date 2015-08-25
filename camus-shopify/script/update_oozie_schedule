@@ -43,7 +43,7 @@ def main():
     command = 'bash -c "'
     command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
     command += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus '
-    command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus-oozie.properties"'
+    command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus.properties"'
 
     os.environ['WEBHDFS_HOST'] = secrets['webhdfs']
     os.environ['JOBTRACKER'] = secrets['jobtracker']
