@@ -4,5 +4,5 @@ source .venv/bin/activate
 pip install Fabric==1.10.1
 pip install yattag
 pip install pywebhdfs
-pip install git+git://github.com/orenmazor/oozie.py@78cb35f4e5210412baa7b1dac8c3231242f8bad7
+pip install git+git://github.com/orenmazor/oozie.py@011cc5985cf39e3ba95a69bafba61c262988d8bb
 ./camus-shopify/script/update_oozie_schedule
