@@ -7,4 +7,4 @@ pip install python-dateutil
 pip install pywebhdfs
 pip install git+git://github.com/orenmazor/oozie.py@011cc5985cf39e3ba95a69bafba61c262988d8bb
 pip install git+https://github.com/Shopify/pywebhdfs.git@d392527b93bad97367dd3765a1e5525a598e64cf#egg=starscream-pywebhdfs
-./camus-shopify/script/update_oozie_schedule
+./camus-shopify/script/update_schedule
