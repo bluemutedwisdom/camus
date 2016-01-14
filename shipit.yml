@@ -4,5 +4,5 @@ dependencies:
 
 deploy:
   override:
-    - mvn clean package
+    - mvn clean package -DskipTests
     - camus-shopify/script/deploy
