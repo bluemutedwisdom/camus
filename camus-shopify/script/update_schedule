@@ -48,16 +48,27 @@ def main():
     camus_jar = get_camus_version(repo_root)
     azkaban_auth = json.load(open(os.path.join(repo_root, 'camus-shopify', 'azkaban.json')))
 
-    command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://resource-manager1.hu131.data-chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
-    command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
-    command += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus.properties"'
+    camus_command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://resource-manager1.hu131.data-chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
+    camus_command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
+    camus_command += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    camus_command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus.properties"'
+
+    camus_watermark_cmd = 'bash -c "'
+    camus_watermark_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
+    camus_watermark_cmd += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/camus/shared/camus.properties"'
 
     project = Project('Camus')
-    project.add_job('Camus', Job({'failure.emails': 'camus@shopify.pagerduty.com',
+    project.add_job('Camus Import', Job({'failure.emails': 'camus@shopify.pagerduty.com',
                                   'type': 'command',
-                                  'command': command
-    }))
+                                  'command': camus_command
+                                  }))
+    project.add_job("Camus Watermark", Job({'failure.emails': 'camus@shopify.pagerduty.com',
+                                            'type': 'command',
+                                            'command': camus_watermark_cmd,
+                                            'dependencies': 'Camus Import'}
+                                           ))
+    project.add_job("Camus", Job({'dependencies': 'Camus Watermark', 'type':'noop'}))
 
     logger.info('Building zip file')
     project.build('camus.zip', True)
