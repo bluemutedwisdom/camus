@@ -70,8 +70,11 @@ object CamusPartitionChecker {
     * @return a map of topic -> Seq[(year, month, day, hour)]
     */
   def getTopicsAndHoursToFlag(camusRunPath: Path, backfill: Boolean = false): Map[String, Seq[(Int, Int, Int, Int)]] = {
+    var whitelist = props.getProperty(WHITELIST_TOPICS, ".*")
+    if (whitelist.isEmpty) whitelist = ".*"
+
     // Empty Whitelist means all --> default to .* regexp
-    val topicsWhitelist = "(" + props.getProperty(WHITELIST_TOPICS, ".*").replaceAll(" *, *", "|") + ")"
+    val topicsWhitelist = "(" + whitelist.replaceAll(" *, *", "|") + ")"
     // Empty Blacklist means no blacklist --> Default to empty string
     val topicsBlacklist = "(" + props.getProperty(BLACKLIST_TOPICS, "").replaceAll(" *, *", "|") + ")"
 
