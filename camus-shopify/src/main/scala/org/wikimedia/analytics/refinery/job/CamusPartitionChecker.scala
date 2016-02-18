@@ -15,15 +15,18 @@ import scopt.OptionParser
 import com.github.nscala_time.time.Imports._
 
 /**
- * Class marking checking camus runs based on a camus.properties file.
- * It flags hdfs imported data for fully imported hours.
- *
- * command example (replace [*] with * in classpath - hack to prevent scala comment issue):
- * java -Dlog4j.configuration=file:///home/joal/code/log4j_console.properties \
- *      -cp "/home/joal/code/analytics-refinery-source/refinery-job/target/refinery-job-0.0.21-SNAPSHOT.jar:/usr/lib/spark/lib/[*]:/usr/lib/hadoop/[*]:/usr/lib/hadoop-hdfs/[*]:/usr/lib/hadoop/lib/[*]:/usr/share/java/[*]" \
- *      org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /home/joal/camus.test.import.properties
- *
- */
+  *
+  * This is a modified version of the original class found in https://github.com/wikimedia/analytics-refinery-source
+  * whose original author is Joseph Allemandou <joal@wikimedia.org>
+  *
+  * Class marking checking camus runs based on a camus.properties file.
+  * It flags hdfs imported data for fully imported hours.
+  *
+  * command example (replace [*] with * in classpath - hack to prevent scala comment issue):
+  * java -Dlog4j.configuration=file:///home/joal/code/log4j_console.properties \
+  *      -cp "/home/joal/code/analytics-refinery-source/refinery-job/target/refinery-job-0.0.21-SNAPSHOT.jar:/usr/lib/spark/lib/[*]:/usr/lib/hadoop/[*]:/usr/lib/hadoop-hdfs/[*]:/usr/lib/hadoop/lib/[*]:/usr/share/java/[*]" \
+  *      org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /home/joal/camus.test.import.properties
+  */
 object CamusPartitionChecker {
 
   val BLACKLIST_TOPICS = EtlInputFormat.KAFKA_BLACKLIST_TOPIC

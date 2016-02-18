@@ -4,8 +4,10 @@ import com.linkedin.camus.etl.kafka.common.EtlKey
 import org.apache.hadoop.fs._
 import org.apache.hadoop.io.{NullWritable, SequenceFile, Writable, WritableComparable}
 
-
-
+/**
+  * This is a modified version of the original class found in https://github.com/wikimedia/analytics-refinery-source
+  * whose original author is Joseph Allemandou <joal@wikimedia.org>
+  */
 class CamusStatusReader(fs: FileSystem) {
 
   /**
