@@ -57,6 +57,17 @@ class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAft
     partitionDir should equal(expectedDir)
   }
 
+  it should "replace '_' with '.' when computing partition directory" in {
+    val base = "/test/base/folder"
+    val topic = "big_topic_name"
+    val (year, month, day, hour) = (2015, 9, 28, 1)
+
+    val partitionDir = CamusPartitionChecker.partitionDirectory(base, topic, year, month, day, hour)
+    val expectedDir = "/test/base/folder/big.topic.name/hourly/2015/09/28/01"
+
+    partitionDir should equal(expectedDir)
+  }
+
   it should "fail computing partition directory if no base" in {
     val base = null
     val topic = "topic"

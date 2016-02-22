@@ -46,7 +46,8 @@ object CamusPartitionChecker {
    * if  t1 =  = 2015-09-25 03:28:12
    * and t2 =  = 2015-09-25 06:55:32
    * Returned result is
-   *     [(2015, 9, 25, 4), (2015, 9, 25, 5),(2015, 9, 25, 6)]
+   *      [(2015, 9, 25, 4), (2015, 9, 25, 5),(2015, 9, 25, 6)]
+   *
    * @param t1 The first timestamp (oldest)
    * @param t2 The second timestamp (youngest)
    * @return the hours having happened between t1 and t2 in format (year, month, day, hour)
@@ -60,15 +61,23 @@ object CamusPartitionChecker {
     }
   }
 
+  /**
+    * In ShopifyPartitioner (which is part of our Camus import job), we replace underscores with dots for
+    * out topic names. That was done in order to be backwards compatible without having to move data around.
+    * This is here to make sure we can find the correct paths to add the flag.
+    */
   def partitionDirectory(base: String, topic: String, year: Int, month: Int, day: Int, hour: Int): String = {
-    if ((! StringUtils.isEmpty(base)) && (! StringUtils.isEmpty(topic)))
-      f"${base}%s/${topic}%s/${year}%04d/${month}%02d/${day}%02d/${hour}%02d"
+    if ((! StringUtils.isEmpty(base)) && (! StringUtils.isEmpty(topic))) {
+      val dottedTopicName = topic.replaceAll("_", "\\.")
+      f"${base}%s/${dottedTopicName}%s/${year}%04d/${month}%02d/${day}%02d/${hour}%02d"
+    }
     else
       throw new IllegalArgumentException("Can't make partition directory with empty base or topic.")
   }
 
   /** Compute complete hours imported on a camus run by topic. Throws an IllegalStateException if
     * the camus run state is not correct (missing topics or import-time not moving)
+    *
     * @param camusRunPath the camus run Path folder to use
     * @return a map of topic -> Seq[(year, month, day, hour)]
     */
