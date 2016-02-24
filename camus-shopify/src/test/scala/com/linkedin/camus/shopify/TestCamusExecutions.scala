@@ -9,7 +9,7 @@ import org.scalatest.FunSuite
 
 class TestCamusExecutions extends FunSuite {
   val camusHistoryTestFolder = "../camus-shopify/src/test/resources/camus-test-data"
-  val camusDestinationPath = "../camus-shopify/src/test/resources/camus-test-data/no_lad"
+  val camusDestinationPath = "../camus-shopify/src/test/resources/camus-test-data/topics"
   val fs = FileSystem.get(new Configuration())
   val props = new Properties()
   props.setProperty("etl.execution.history.path", camusHistoryTestFolder)
@@ -34,7 +34,10 @@ class TestCamusExecutions extends FunSuite {
     val executions = new CamusExecutions(props, fs)
     val window = 1000 * 60 * 60 * 2 // 2 hours
 
-    val expectedFolder = List(camusDestinationPath + "/webrequest_text/2015/10/02/06")
+    val expectedFolder = List(
+      camusDestinationPath + "/webrequest_text/2015/10/02/06",
+      camusDestinationPath + "/webrequest_text/2015/10/02/07"
+    )
 
     assertResult(expectedFolder) { executions.droppedFoldersInWindow(window) }
   }
