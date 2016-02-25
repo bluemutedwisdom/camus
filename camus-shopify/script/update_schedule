@@ -58,6 +58,11 @@ def main():
     camus_watermark_cmd += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
     camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/camus/shared/camus.properties"'
 
+    monitor_cmd = 'bash -c "'
+    monitor_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
+    monitor_cmd += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/camus/shared/camus.properties"'
+
     project = Project('Camus')
     project.add_job('Camus Import', Job({'failure.emails': 'camus@shopify.pagerduty.com',
                                   'type': 'command',
@@ -68,7 +73,12 @@ def main():
                                             'command': camus_watermark_cmd,
                                             'dependencies': 'Camus Import'}
                                            ))
-    project.add_job("Camus", Job({'dependencies': 'Camus Watermark', 'type':'noop'}))
+    project.add_job("Late-Arriving-Data Monitor", Job({'failure.emails': 'camus@shopify.pagerduty.com',
+                                            'type': 'command',
+                                            'command': monitor_cmd,
+                                            'dependencies': 'Camus Watermark'}
+                                           ))
+    project.add_job("Camus", Job({'dependencies': 'Late-Arriving-Data Monitor', 'type':'noop'}))
 
     logger.info('Building zip file')
     project.build('camus.zip', True)

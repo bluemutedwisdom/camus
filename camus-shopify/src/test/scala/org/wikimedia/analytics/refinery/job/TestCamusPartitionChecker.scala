@@ -11,7 +11,7 @@ import scala.reflect.io.{Directory}
 
 class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  val camusHistoryTestFolder = "../refinery-camus/src/test/resources/camus-test-data"
+  val camusHistoryTestFolder = "../camus-shopify/src/test/resources/camus-test-data"
   val failedRunFolder = "2015-08-15-17-52-01"
   val noHourRunFolder = "2015-09-29-15-20-08"
   val hourSpanRunFolder = "2015-10-02-08-00-07"
@@ -52,7 +52,7 @@ class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAft
     val (year, month, day, hour) = (2015, 9, 28, 1)
 
     val partitionDir = CamusPartitionChecker.partitionDirectory(base, topic, year, month, day, hour)
-    val expectedDir = "/test/base/folder/topic/hourly/2015/09/28/01"
+    val expectedDir = "/test/base/folder/topic/2015/09/28/01"
 
     partitionDir should equal(expectedDir)
   }
@@ -122,30 +122,6 @@ class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAft
       else o.size should equal (0)
   }
 
-  it should "fail getting topics and hours in a camus-run folderwith incorrect whitelist" in {
-    val folder: String = camusHistoryTestFolder + "/" + hourSpanRunFolder
-    val path: Path = new Path(folder)
-
-    // everything whitelist and no blacklist (by default)
-    // --> Should fail, one topic in historical data needs to be left aside
-    intercept[IllegalStateException] {
-      CamusPartitionChecker.getTopicsAndHoursToFlag(path)
-    }
-  }
-
-  it should "fail getting topics and hours in a camus-run folder with incorrect blacklist" in {
-    val folder: String = camusHistoryTestFolder + "/" + hourSpanRunFolder
-    val path: Path = new Path(folder)
-
-    // No whitelist, incorrect blacklist
-    // --> Should fail, one topic in historical data needs to be left aside
-    CamusPartitionChecker.props.setProperty(CamusPartitionChecker.BLACKLIST_TOPICS,
-      ".*_test")
-    intercept[IllegalStateException] {
-      CamusPartitionChecker.getTopicsAndHoursToFlag(path)
-    }
-  }
-
   it should "get topics and hours in a camus-run folder with whitelist with no hours to flag" in {
     val folder: String = camusHistoryTestFolder + "/" + noHourRunFolder
     val path: Path = new Path(folder)
@@ -175,20 +151,20 @@ class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAft
   }
 
   it should "write the file flag for a given partition hour" in {
-    tmpDir = Files.createTempDirectory("testcamus").toFile();
-    val partitionFolder = "testtopic/hourly/2015/10/02/08"
+    tmpDir = Files.createTempDirectory("testcamus").toFile
+    val partitionFolder = "testtopic/2015/10/02/08"
     val d = new Directory(new File(tmpDir, partitionFolder))
     d.createDirectory()
 
     d.list shouldBe empty
 
     // correct partition base path config
-    CamusPartitionChecker.props.setProperty(CamusPartitionChecker.PARTITION_BASE_PATH, tmpDir.getAbsolutePath())
+    CamusPartitionChecker.props.setProperty(CamusPartitionChecker.PARTITION_BASE_PATH, tmpDir.getAbsolutePath)
 
     CamusPartitionChecker.flagFullyImportedPartitions("_TESTFLAG", false, Map("testtopic" -> Seq((2015, 10, 2, 8))))
 
     d.list should not be empty
-    d.list.toSeq.map(_.toString()) should contain (tmpDir.getAbsolutePath() + "/testtopic/hourly/2015/10/02/08/_TESTFLAG")
+    d.list.toSeq.map(_.toString()) should contain (tmpDir.getAbsolutePath() + "/testtopic/2015/10/02/08/_TESTFLAG")
 
   }
 
