@@ -12,7 +12,7 @@ class TestLateArrivingDataMonitor extends FunSuite {
   val window = 1000 * 60 * 60 * 2 // 2 hours
   val camusHistoryTestFolder = "../camus-shopify/src/test/resources/camus-test-data"
   val camusDestinationPath = camusHistoryTestFolder + "/topics"
-  val topicsDrop = camusDestinationPath + "/webrequest_text/2015/10/02/06"
+  val topicsDrop = camusDestinationPath + "/webrequest.text/2015/10/02/06"
   val props = new Properties()
   props.setProperty("etl.execution.history.path", camusHistoryTestFolder)
   props.setProperty("etl.destination.path", camusDestinationPath)
