@@ -35,8 +35,8 @@ class TestCamusExecutions extends FunSuite {
     val window = 1000 * 60 * 60 * 2 // 2 hours
 
     val expectedFolder = List(
-      camusDestinationPath + "/webrequest_text/2015/10/02/06",
-      camusDestinationPath + "/webrequest_text/2015/10/02/07"
+      camusDestinationPath + "/webrequest.text/2015/10/02/06",
+      camusDestinationPath + "/webrequest.text/2015/10/02/07"
     )
 
     assertResult(expectedFolder) { executions.droppedFoldersInWindow(window) }
