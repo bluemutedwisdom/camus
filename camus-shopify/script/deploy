@@ -2,6 +2,7 @@
 set -e
 source .venv/bin/activate
 pip install Fabric==1.10.1
+pip install paramiko==1.16.0
 pip install yattag
 pip install python-dateutil
 pip install pywebhdfs
