@@ -65,20 +65,16 @@ def main():
 
     project = Project('Camus')
     project.add_job('Camus Import', Job({'failure.emails': 'camus@shopify.pagerduty.com',
-                                  'type': 'command',
-                                  'command': camus_command
-                                  }))
+                                         'type': 'command',
+                                         'command': camus_command
+                                         }))
     project.add_job("Camus Watermark", Job({'failure.emails': 'camus@shopify.pagerduty.com',
                                             'type': 'command',
-                                            'command': camus_watermark_cmd,
-                                            'dependencies': 'Camus Import'}
-                                           ))
-    project.add_job("Late-Arriving-Data Monitor", Job({'failure.emails': 'camus@shopify.pagerduty.com',
-                                            'type': 'command',
-                                            'command': monitor_cmd,
-                                            'dependencies': 'Camus Watermark'}
-                                           ))
-    project.add_job("Camus", Job({'dependencies': 'Late-Arriving-Data Monitor', 'type':'noop'}))
+                                            'command': camus_watermark_cmd
+                                            }))
+    project.add_job("Late-Arriving-Data Monitor", Job({'type': 'command',
+                                                       'command': monitor_cmd
+                                                       }))
 
     logger.info('Building zip file')
     project.build('camus.zip', True)
@@ -89,7 +85,9 @@ def main():
     session.upload_project('Camus', 'camus.zip')
     logger.info('Successfully uploaded Camus zip file.')
 
-    session.schedule_workflow('Camus', 'Camus', date='01/01/2015', time="12,30,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow('Camus', 'Camus Import',               date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow('Camus', 'Camus Watermark',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow('Camus', 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
     logger.info('Successfully scheduled Camus flow.')
 
 if __name__ == '__main__':
