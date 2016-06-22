@@ -8,6 +8,7 @@ target
 *.tar.gz
 *.swp
 *.swo
+*.pyc
 .classpath
 .project
 .settings/
