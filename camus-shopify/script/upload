@@ -8,8 +8,16 @@ env.host_string = 'management1.hw131.data-chi.shopify.com'
 env.user = 'deploy'
 app_name = 'camus'
 code_dir = '/u/apps/camus/current'
-path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
+shared_dir = '/u/apps/camus/shared'
 
 run('mkdir -p %s' % code_dir)
+
+path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
 put(path, code_dir)
+
+files = ['hive-generic-partitioner.py', 'util.py']
+for filename in files:
+    path = os.path.join(os.getcwd(), 'camus-shopify', 'script', filename)
+    put(path, shared_dir)
+
 print('Completed')
