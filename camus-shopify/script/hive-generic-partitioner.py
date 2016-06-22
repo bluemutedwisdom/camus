@@ -23,6 +23,7 @@ Options:
                                         all directories found in <datadir> will be partitioned.
     -o --hive-options=<options>         Any valid Hive CLI options you want to pass to Hive commands.
                                         Example: '--auxpath /path/to/hive-serdes-1.0-SNAPSHOT.jar'
+    -i --ignore_before_date=<date>      Do not create Hive partitions before a certain start date, default is None
     -v --verbose                        Turn on verbose debug logging.
     -n --dry-run                        Don't actually create any partitions, just output the Hive queries to add partitions.
 """
@@ -32,8 +33,29 @@ from   datetime import datetime
 from   docopt   import docopt
 import logging
 
+from pykafka import KafkaClient
+
 from util import HiveUtils, HdfsDatasetUtils, diff_datewise, interval_hierarchies
 from hive_trekkie import hive_trekkie_create_table_stmt
+
+def load_properties(filepath, sep='=', comment_char='#'):
+    """
+    Read the file passed as parameter as a properties file.
+    """
+    props = {}
+    with open(filepath, "rt") as f:
+        for line in f:
+            l = line.strip()
+            if l and not l.startswith(comment_char):
+                key_value = l.split(sep)
+                key = key_value[0].strip()
+                value = sep.join(key_value[1:]).strip('" \t')
+                props[key] = value
+    return props
+
+def fetch_kafka_trekkie_topics(kafka_brokers):
+    client = KafkaClient(hosts=kafka_brokers)
+    return filter((lambda topic: topic.startswith('trekkie')), client.topics.keys())
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
@@ -42,6 +64,7 @@ if __name__ == '__main__':
     database               = arguments['--database']
     tables                 = arguments['--tables']
     hive_options           = arguments['--hive-options']
+    ignore_before_date     = arguments['--ignore_before_date']
     verbose                = arguments['--verbose']
     dry_run                = arguments['--dry-run']
 
@@ -55,15 +78,19 @@ if __name__ == '__main__':
 
     if tables:
         tables = tables.split(',')
+    else:
+        properties = load_properties('/u/apps/camus/shared/camus.properties')
+        tables = fetch_kafka_trekkie_topics(properties['kafka.brokers'])
 
     hive = HiveUtils(database, hive_options)
     for table in tables:
-        table = table.replace('.', '_')
+        hdfs_location = table
+        table = table.replace('.', '_').replace('-', '_')
         if not hive.table_exists(table):
             if dry_run:
-                logging.info(str(hive_trekkie_create_table_stmt(table)))
+                logging.info(str(hive_trekkie_create_table_stmt(table, hdfs_location)))
             else:
-                hive.table_create(table)
+                hive.table_create(table, hdfs_location)
 
         if dry_run:
             logging.info(str(hive.get_missing_partitions_ddl(table)))

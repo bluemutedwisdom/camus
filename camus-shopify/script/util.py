@@ -126,20 +126,27 @@ def sh(command, check_return_code=True):
 
 
 class HiveUtils(object):
-    def __init__(self, database='default', options=''):
-        self.database   = database
-        if options:
-            self.options    = options.split()
-        else:
-            self.options = []
+    def __init__(self, database='default', options=[], ignore_before_date=None):
+        self.database = database
+        self.options = options.split() if isinstance(options, basestring) else options
+        self.ignore_before_date = datetime(2016, 8, 7)
 
         self.hivecmd = ['hive'] + self.options + ['cli', '--database', self.database]
         self.tables  = {}
 
+    def is_partition_after_ignore_date(self, partition):
+        try:
+            partition_date = datetime.strptime(partition, '%Y/%m/%d')
+            return partition_date >= self.ignore_before_date
+        except ValueError:
+            return True
+
+
     def add_missing_partitions(self, table):
         add_partition_ddl = self.get_missing_partitions_ddl(table)
         if (add_partition_ddl and len(add_partition_ddl)>0):
-            self.query(add_partition_ddl)
+            logging.debug('ADD PARTITIONS DLL:\n%s' % add_partition_ddl)
+            self.query(add_partition_ddl, use_tempfile=True)
 
 
     def get_missing_partitions_ddl(self, table):
@@ -168,10 +175,14 @@ class HiveUtils(object):
         logging.debug('MSCK REPAIR OUTPUT:\n%s' % msck_out)
 
         missing_partitions = []
-        for t in msck_out.split('\t'):
-            if table in t:
-                logging.debug('For table %s found missing partition: %s' % (table, t.split(':')[1]))
-                missing_partitions.append(t.split(':')[1])
+        for partition in msck_out.split('\t'):
+            if table in partition:
+                partition = partition.split(':')[1]
+                logging.debug('For table %s found missing partition: %s' % (table, partition))
+                if self.is_partition_after_ignore_date(partition):
+                    missing_partitions.append(partition)
+                else:
+                    logging.debug('Ignoring partition: %s because it\'s before %s' % (partition, self.ignore_before_date))
 
         return missing_partitions
 
@@ -214,8 +225,8 @@ class HiveUtils(object):
         return table in self.tables.keys()
 
 
-    def table_create(self, table_name):
-        table_create_stmt = hive_trekkie_create_table_stmt(table_name)
+    def table_create(self, table_name, hdfs_location):
+        table_create_stmt = hive_trekkie_create_table_stmt(table_name, hdfs_location)
         self.query(table_create_stmt)
 
 
