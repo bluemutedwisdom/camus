@@ -96,7 +96,7 @@ def main():
     logger.info('Successfully uploaded Camus zip file.')
 
     session.schedule_workflow('Camus', 'Camus Import',               date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow('Camus', 'Camus Watermark',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow('Camus', 'Hive Partitions',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
     session.schedule_workflow('Camus', 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
     logger.info('Successfully scheduled Camus flow.')
 
