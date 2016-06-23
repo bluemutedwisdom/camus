@@ -66,7 +66,7 @@ def main():
     hive_partitions_cmd = 'bash -c "'
     hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/camus/shared/hive-generic-partitioner.py %s ' % (os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka'))
     hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/camus/shared/json-serde-1.3.7-jar-with-dependencies.jar\' '
-    hive_partitions_cmd += '--database default '
+    hive_partitions_cmd += '--database trekkie '
     hive_partitions_cmd += '--verbose"'
 
     project = Project('Camus')
@@ -82,7 +82,8 @@ def main():
                                                        'command': monitor_cmd
                                                        }))
     project.add_job("Hive Partitions", Job({'type': 'command',
-                                            'command': hive_partitions_cmd
+                                            'command': hive_partitions_cmd,
+                                            'dependencies': 'Camus Watermark'
                                             }))
 
     logger.info('Building zip file')
@@ -95,7 +96,7 @@ def main():
     logger.info('Successfully uploaded Camus zip file.')
 
     session.schedule_workflow('Camus', 'Camus Import',               date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow('Camus', 'Camus Watermark',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow('Camus', 'Hive Partitions',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
     session.schedule_workflow('Camus', 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
     logger.info('Successfully scheduled Camus flow.')
 
