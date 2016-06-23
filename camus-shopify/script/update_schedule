@@ -66,7 +66,7 @@ def main():
     hive_partitions_cmd = 'bash -c "'
     hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/camus/shared/hive-generic-partitioner.py %s ' % (os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka'))
     hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/camus/shared/json-serde-1.3.7-jar-with-dependencies.jar\' '
-    hive_partitions_cmd += '--database default '
+    hive_partitions_cmd += '--database trekkie '
     hive_partitions_cmd += '--verbose"'
 
     project = Project('Camus')
@@ -82,7 +82,8 @@ def main():
                                                        'command': monitor_cmd
                                                        }))
     project.add_job("Hive Partitions", Job({'type': 'command',
-                                            'command': hive_partitions_cmd
+                                            'command': hive_partitions_cmd,
+                                            'dependencies': 'Camus Watermark'
                                             }))
 
     logger.info('Building zip file')
