@@ -7,17 +7,20 @@ env.forward_agent = True
 env.host_string = 'management1.hw131.data-chi.shopify.com'
 env.user = 'deploy'
 app_name = 'camus'
-code_dir = '/u/apps/camus/current'
-shared_dir = '/u/apps/camus/shared'
+base_path = '/u/apps'
+targets = ['camus', 'camus-chi2']
+files_to_deploy = ['hive-generic-partitioner.py', 'util.py']
 
-run('mkdir -p %s' % code_dir)
+jar_path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
 
-path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
-put(path, code_dir)
+for target in targets:
+    target_dir = '/'.join([base_path, target, 'current'])
+    shared_dir = '/'.join([base_path, target, 'shared'])
+    run('mkdir -p %s' % target_dir)
+    run('mkdir -p %s' % shared_dir)
+    put(jar_path, target_dir)
+    for filename in files_to_deploy:
+        filepath = os.path.join(os.getcwd(), 'camus-shopify', 'script', filename)
+        put(filepath, shared_dir)
 
-files = ['hive-generic-partitioner.py', 'util.py']
-for filename in files:
-    path = os.path.join(os.getcwd(), 'camus-shopify', 'script', filename)
-    put(path, shared_dir)
-
-print('Completed')
+print('Completed upload')
