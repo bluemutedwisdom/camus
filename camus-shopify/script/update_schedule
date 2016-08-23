@@ -10,6 +10,7 @@ from os.path import basename, exists
 from azkaban import Job, Project
 from azkaban.remote import Session
 
+TARGETS = ['camus', 'camus-chi2']
 
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
 ch = lg.StreamHandler(sys.stdout)
@@ -43,62 +44,91 @@ def get_camus_version(path):
     cmd = "mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)'"
     return run_shell_command(cmd, 'Retrieved Camus version', path, True)
 
+def camus_job(target):
+    camus_command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://resource-manager1.hu131.data-chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
+    camus_command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
+    camus_command += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    camus_command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/%(target)s/shared/camus.properties"'
+    return camus_command % {'target': target}
+
+def camus_watemark_job(target):
+    camus_watermark_cmd = 'bash -c "'
+    camus_watermark_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
+    camus_watermark_cmd += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/%(target)s/shared/camus.properties"'
+    return camus_watermark_cmd % {'target': target}
+
+def lad_monitor_job(target):
+    monitor_cmd = 'bash -c "'
+    monitor_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
+    monitor_cmd += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
+    monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/%(target)s/shared/camus.properties"'
+    return monitor_cmd % {'target': target}
+
+def hive_partition_job(target):
+    hive_partitions_cmd = 'bash -c "'
+    hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/%(target)s/shared/hive-generic-partitioner.py %(hdfs_path)s '
+    hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/%(target)s/shared/json-serde-1.3.7-jar-with-dependencies.jar\' '
+    hive_partitions_cmd += '--database %(database)s '
+    hive_partitions_cmd += '--verbose"'
+    hdfs_path = os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka')
+    database = 'trekkie' if target == 'camus' else 'trekkie_chi2'
+    return hive_partitions_cmd % {'target': target, 'hdfs_path': hdfs_path, 'database': database}
+
+def camus_project(project_name, target):
+    project = Project(project_name)
+
+    project.add_job('Import',
+                    Job({'failure.emails': 'camus@shopify.pagerduty.com',
+                         'type': 'command',
+                         'command': camus_job(target)
+                         }))
+    project.add_job("Watermark",
+                    Job({'failure.emails': 'camus@shopify.pagerduty.com',
+                         'type': 'command',
+                         'command': camus_watemark_job(target)
+                         }))
+    project.add_job("Late-Arriving-Data Monitor",
+                    Job({'type': 'command',
+                         'command': lad_monitor_job(target)
+                         }))
+    project.add_job("Hive Partitions",
+                    Job({'type': 'command',
+                         'command': hive_partition_job(target),
+                         'dependencies': 'Watermark'
+                         }))
+
+    return project
+
+def schedule_jobs(project_name, session):
+    session.schedule_workflow(project_name, 'Import',                     date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow(project_name, 'Hive Partitions',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
+
 def main():
     repo_root = os.getcwd()
     camus_jar = get_camus_version(repo_root)
     azkaban_auth = json.load(open(os.path.join(repo_root, 'camus-shopify', 'azkaban.json')))
 
-    camus_command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://resource-manager1.hu131.data-chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
-    camus_command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
-    camus_command += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    camus_command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/camus/shared/camus.properties"'
+    for target in TARGETS:
+        project_name = target.title()
+        project_zip = "%s.zip" % target
 
-    camus_watermark_cmd = 'bash -c "'
-    camus_watermark_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
-    camus_watermark_cmd += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/camus/shared/camus.properties"'
+        project = camus_project(project_name, target)
 
-    monitor_cmd = 'bash -c "'
-    monitor_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/camus/shared/log4j.xml '
-    monitor_cmd += '-cp $(hadoop classpath):/u/apps/camus/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/camus/shared/camus.properties"'
+        logger.info('Building %s file' % project_zip)
+        project.build(project_zip, True)
 
-    hive_partitions_cmd = 'bash -c "'
-    hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/camus/shared/hive-generic-partitioner.py %s ' % (os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka'))
-    hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/camus/shared/json-serde-1.3.7-jar-with-dependencies.jar\' '
-    hive_partitions_cmd += '--database trekkie '
-    hive_partitions_cmd += '--verbose"'
+        logger.info('Connecting to Azkaban site')
+        session = start_session(azkaban_auth['server'], azkaban_auth['user'], azkaban_auth['password'])
 
-    project = Project('Camus')
-    project.add_job('Camus Import', Job({'failure.emails': 'camus@shopify.pagerduty.com',
-                                         'type': 'command',
-                                         'command': camus_command
-                                         }))
-    project.add_job("Camus Watermark", Job({'failure.emails': 'camus@shopify.pagerduty.com',
-                                            'type': 'command',
-                                            'command': camus_watermark_cmd
-                                            }))
-    project.add_job("Late-Arriving-Data Monitor", Job({'type': 'command',
-                                                       'command': monitor_cmd
-                                                       }))
-    project.add_job("Hive Partitions", Job({'type': 'command',
-                                            'command': hive_partitions_cmd,
-                                            'dependencies': 'Camus Watermark'
-                                            }))
+        logger.info('Uploading %s file for' % project_zip)
+        session.upload_project(project_name, project_zip)
+        logger.info('Successfully uploaded %s zip file.' % project_name)
 
-    logger.info('Building zip file')
-    project.build('camus.zip', True)
-    logger.info('Connecting to Azkaban site')
-    session = start_session(azkaban_auth['server'], azkaban_auth['user'], azkaban_auth['password'])
+        schedule_jobs(project_name, session)
+        logger.info('Successfully scheduled %s flow.' % project_name)
 
-    logger.info('Uploading zip file')
-    session.upload_project('Camus', 'camus.zip')
-    logger.info('Successfully uploaded Camus zip file.')
-
-    session.schedule_workflow('Camus', 'Camus Import',               date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow('Camus', 'Hive Partitions',            date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow('Camus', 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
-    logger.info('Successfully scheduled Camus flow.')
 
 if __name__ == '__main__':
     main()
