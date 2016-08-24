@@ -45,11 +45,12 @@ def get_camus_version(path):
     return run_shell_command(cmd, 'Retrieved Camus version', path, True)
 
 def camus_job(target):
-    camus_command = 'bash -c "curl --compressed -H \'Accept: application/json\' -X GET \'http://resource-manager1.hu131.data-chi.shopify.com:8088/ws/v1/cluster/apps?states=RUNNING,ACCEPTED\' | grep -v Camus && echo \'Camus is not running\' && '
+    job_name = 'Camus chi Job' if target == 'camus' else 'Camus chi2 Job'
+    camus_command = 'bash -c "! yarn application -list | grep \'%(job_name)s\' && echo \'Camus is not running\' && '
     camus_command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
     camus_command += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
     camus_command += 'com.linkedin.camus.etl.kafka.CamusJob -P /u/apps/%(target)s/shared/camus.properties"'
-    return camus_command % {'target': target}
+    return camus_command % {'target': target, 'job_name': job_name}
 
 def camus_watemark_job(target):
     camus_watermark_cmd = 'bash -c "'
