@@ -69,7 +69,8 @@ def lad_monitor_job(target):
 def hive_partition_job(target):
     hive_partitions_cmd = 'bash -c "'
     hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/%(target)s/shared/hive-generic-partitioner.py %(hdfs_path)s '
-    hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/%(target)s/shared/json-serde-1.3.7-jar-with-dependencies.jar\' '
+    hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/%(target)s/shared/json-serde-1.3.7-jar-with-dependencies.jar '
+    hive_partitions_cmd += ' --hiveconf hive.root.logger=ERROR,console\' '
     hive_partitions_cmd += '--database %(database)s '
     hive_partitions_cmd += '--verbose"'
     hdfs_path = os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka')
