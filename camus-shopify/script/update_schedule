@@ -10,7 +10,7 @@ from os.path import basename, exists
 from azkaban import Job, Project
 from azkaban.remote import Session
 
-TARGETS = ['camus', 'camus-chi2']
+TARGETS = ['camus']
 
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
 ch = lg.StreamHandler(sys.stdout)
@@ -45,7 +45,7 @@ def get_camus_version(path):
     return run_shell_command(cmd, 'Retrieved Camus version', path, True)
 
 def camus_job(target):
-    job_name = 'Camus chi Job' if target == 'camus' else 'Camus chi2 Job'
+    job_name = 'Camus Job'
     camus_command = 'bash -c "! yarn application -list | grep \'%(job_name)s\' && echo \'Camus is not running\' && '
     camus_command += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
     camus_command += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
@@ -74,8 +74,7 @@ def hive_partition_job(target):
     hive_partitions_cmd += '--database %(database)s '
     hive_partitions_cmd += '--verbose"'
     hdfs_path = os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka')
-    database = 'trekkie' if target == 'camus' else 'trekkie_chi2'
-    return hive_partitions_cmd % {'target': target, 'hdfs_path': hdfs_path, 'database': database}
+    return hive_partitions_cmd % {'target': target, 'hdfs_path': hdfs_path, 'database': 'trekkie'}
 
 def camus_project(project_name, target):
     project = Project(project_name)
