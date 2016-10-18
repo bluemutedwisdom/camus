@@ -1,7 +1,5 @@
 # https://services.shopify.io/services/camus/production
-director:
-@airhorns
+director: airhorns
 owners:
-data-acquisition@shopify.com
-classification: 
-gamma
+- Shopify/data-acquisition
+classification: tier2
