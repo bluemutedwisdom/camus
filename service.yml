@@ -1,5 +1,5 @@
 # https://services.shopify.io/services/camus/production
-director: airhorns
+director: jduff
 owners:
 - Shopify/data-acquisition
 classification: tier2
