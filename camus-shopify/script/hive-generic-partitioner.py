@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     hive = HiveUtils(database, hive_options)
     for table in tables:
-        hdfs_location = table
+        hdfs_location = table.replace('_', '.')
         table = table.replace('.', '_').replace('-', '_')
         if not hive.table_exists(table):
             if dry_run:
