@@ -36,7 +36,6 @@ import logging
 from pykafka import KafkaClient
 
 from util import HiveUtils, HdfsDatasetUtils, diff_datewise, interval_hierarchies
-from hive_trekkie import hive_trekkie_create_table_stmt
 
 def load_properties(filepath, sep='=', comment_char='#'):
     """
@@ -88,7 +87,7 @@ if __name__ == '__main__':
         table = table.replace('.', '_').replace('-', '_')
         if not hive.table_exists(table):
             if dry_run:
-                logging.info(str(hive_trekkie_create_table_stmt(table, hdfs_location)))
+                logging.info(hive.create_table_ddl(table, hdfs_location))
             else:
                 hive.table_create(table, hdfs_location)
 
