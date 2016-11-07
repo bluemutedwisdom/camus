@@ -20,7 +20,7 @@ import re
 import subprocess
 import tempfile
 
-from hive_trekkie import hive_trekkie_create_table_stmt
+from hive_trekkie import hive_trekkie_create_table_stmt, hive_create_generic_table
 
 logger = logging.getLogger('camus-hive-partitioner')
 interval_hierarchies = {
@@ -224,11 +224,16 @@ class HiveUtils(object):
 
         return table in self.tables.keys()
 
+    def create_table_ddl(self, table_name, hdfs_location):
+        if table_name.startswith('trekkie'):
+            table_create_stmt = hive_trekkie_create_table_stmt(table_name, hdfs_location)
+        else:
+            table_create_stmt = hive_create_generic_table(table_name, hdfs_location)
+
+        return table_create_stmt
 
     def table_create(self, table_name, hdfs_location):
-        table_create_stmt = hive_trekkie_create_table_stmt(table_name, hdfs_location)
-        self.query(table_create_stmt)
-
+        self.query(self.create_table_ddl(table_name, hdfs_location))
 
     def table_schema(self, table):
         if not self.tables: self.tables_init()
