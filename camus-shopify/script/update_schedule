@@ -14,6 +14,7 @@ TARGETS = ['camus']
 
 KAFKA_TOPICS_TO_REGISTER = [
     'facebook.commerce.product.event',
+    'facebook.commerce.milestone',
     'messenger.commerce.customer.message',
     'messenger.commerce.merchant.admin.interactions'
 ]
