@@ -16,7 +16,8 @@ KAFKA_TOPICS_TO_REGISTER = [
     'facebook.commerce.product.event',
     'facebook.commerce.milestone',
     'messenger.commerce.customer.message',
-    'messenger.commerce.merchant.admin.interactions'
+    'messenger.commerce.merchant.admin.interactions',
+    'curated.shopify.channel.uninstall.survey'
 ]
 
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
