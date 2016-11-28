@@ -9,18 +9,12 @@ env.user = 'deploy'
 app_name = 'camus'
 base_path = '/u/apps'
 targets = ['camus']
-files_to_deploy = ['hive-generic-partitioner.py', 'util.py']
 
 jar_path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
 
 for target in targets:
     target_dir = '/'.join([base_path, target, 'current'])
-    shared_dir = '/'.join([base_path, target, 'shared'])
     run('mkdir -p %s' % target_dir)
-    run('mkdir -p %s' % shared_dir)
     put(jar_path, target_dir)
-    for filename in files_to_deploy:
-        filepath = os.path.join(os.getcwd(), 'camus-shopify', 'script', filename)
-        put(filepath, shared_dir)
 
 print('Completed upload')

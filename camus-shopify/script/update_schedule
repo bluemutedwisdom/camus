@@ -12,14 +12,6 @@ from azkaban.remote import Session
 
 TARGETS = ['camus']
 
-KAFKA_TOPICS_TO_REGISTER = [
-    'facebook.commerce.product.event',
-    'facebook.commerce.milestone',
-    'messenger.commerce.customer.message',
-    'messenger.commerce.merchant.admin.interactions',
-    'curated.shopify.channel.uninstall.survey'
-]
-
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
 ch = lg.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
@@ -74,20 +66,6 @@ def lad_monitor_job(target):
     monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/%(target)s/shared/camus.properties"'
     return monitor_cmd % {'target': target}
 
-def hive_partition_job(target, database, tables=[]):
-    hive_partitions_cmd = 'bash -c "'
-    hive_partitions_cmd += 'HADOOP_USER_NAME=deploy python /u/apps/%(target)s/shared/hive-generic-partitioner.py %(hdfs_path)s '
-    hive_partitions_cmd += '--hive-options=\'--auxpath /u/apps/%(target)s/shared/json-serde-1.3.7-jar-with-dependencies.jar '
-    hive_partitions_cmd += ' --hiveconf hive.root.logger=ERROR,console\' '
-    hive_partitions_cmd += '--database %(database)s '
-    hive_partitions_cmd += '--verbose '
-    if tables:
-        hive_partitions_cmd += '--tables %(tables)s '
-    hive_partitions_cmd += '"'
-    hdfs_path = os.path.join('hdfs://hadoop-production', 'data', 'raw', 'kafka')
-    table_list = ','.join(KAFKA_TOPICS_TO_REGISTER)
-    return hive_partitions_cmd % {'target': target, 'hdfs_path': hdfs_path, 'database': database, 'tables': table_list}
-
 def camus_project(project_name, target):
     project = Project(project_name)
 
@@ -105,24 +83,13 @@ def camus_project(project_name, target):
                     Job({'type': 'command',
                          'command': lad_monitor_job(target)
                          }))
-    project.add_job("Hive Kafka Trekkie Partitions",
-                    Job({'type': 'command',
-                         'command': hive_partition_job(target, 'trekkie'),
-                         'dependencies': 'Watermark'
-                         }))
-
-    project.add_job("Hive Kafka Partitions",
-                    Job({'type': 'command',
-                         'command': hive_partition_job(target, 'raw_kafka', KAFKA_TOPICS_TO_REGISTER),
-                         'dependencies': 'Hive Kafka Trekkie Partitions'
-                         }))
 
     return project
 
 def schedule_jobs(project_name, session):
-    session.schedule_workflow(project_name, 'Import',                     date='01/01/2015', time="11,30,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow(project_name, 'Hive Kafka Partitions',      date='01/01/2015', time="12,10,AM,UTC", period="1h", concurrent=False)
-    session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h", concurrent=False)
+    session.schedule_workflow(project_name, 'Import',                     date='01/01/2015', time="11,30,AM,UTC", period="1h",  concurrent=False)
+    session.schedule_workflow(project_name, 'Watermark',                  date='01/01/2015', time="12,10,AM,UTC", period="30m", concurrent=False)
+    session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h",  concurrent=False)
 
 def main():
     repo_root = os.getcwd()
