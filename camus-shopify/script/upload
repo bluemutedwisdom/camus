@@ -4,7 +4,7 @@ from fabric.api import env
 from fabric.operations import run, put
 
 env.forward_agent = True
-env.host_string = 'management1.hw131.data-chi.shopify.com'
+env.host_string = 'management2.ia131.data-chi.shopify.com'
 env.user = 'deploy'
 app_name = 'camus'
 base_path = '/u/apps'
