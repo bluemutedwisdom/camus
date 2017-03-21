@@ -3,3 +3,6 @@ director: jduff
 owners:
 - Shopify/data-acquisition
 classification: tier2
+security:
+  data_management:
+    contains_pii: false # Transmits it to data warehouse but doesn't store any
