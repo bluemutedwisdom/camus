@@ -1,5 +1,5 @@
 # https://services.shopify.io/services/camus/production
-director: jduff
+director: davidlennie
 owners:
 - Shopify/data-acquisition
 classification: tier2
