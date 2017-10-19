@@ -35,7 +35,15 @@ public class StatsdReporter extends TimeReporter {
               new String[] { "camus:counters" });
       for (CounterGroup counterGroup : counters) {
         for (Counter counter : counterGroup) {
-          statsd.gauge(counterGroup.getDisplayName() + "." + counter.getDisplayName(), counter.getValue());
+          String counterName = counter.getDisplayName();
+          if (counterName.contains(":") && counterName.contains(",")) {
+            // use counter name as tags
+              String[] tags = counterName.split(",");
+            statsd.gauge(counterGroup.getDisplayName(), counter.getValue(), tags);
+          }
+          else {
+            statsd.gauge(counterGroup.getDisplayName() + "." + counter.getDisplayName(), counter.getValue());
+          }
         }
       }
     }
