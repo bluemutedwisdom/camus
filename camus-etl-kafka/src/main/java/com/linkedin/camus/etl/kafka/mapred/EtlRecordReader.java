@@ -223,6 +223,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           String.format("Time spent on topic %s:%d = %s", key.getTopic(), key.getPartition(), timeSpentOnPartition);
       mapperContext.write(key, new ExceptionWritable(timeSpentOnTopicMsg));
       log.info(timeSpentOnTopicMsg);
+      mapperContext.getCounter("pull-max-time-reached", key.statsdTags()).increment(1);
 
       reader = null;
     }
@@ -263,6 +264,8 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           statusMsg += statusMsg.length() > 0 ? "; " : "";
           statusMsg += request.getTopic() + ":" + request.getLeaderId() + ":" + request.getPartition();
           context.setStatus(statusMsg);
+          Long messagesToRead = request.getLastOffset() - request.getOffset();
+          mapperContext.getCounter("total.to-read", key.statsdTags()).increment(messagesToRead);
 
           if (reader != null) {
             closeReader();
@@ -283,6 +286,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           context.progress();
           mapperContext.getCounter("total", "data-read").increment(message.getPayload().length);
           mapperContext.getCounter("total", "event-count").increment(1);
+          mapperContext.getCounter("total.event-read-count", key.statsdTags()).increment(1);
 
           message.validate();
 
