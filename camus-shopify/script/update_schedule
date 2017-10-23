@@ -10,7 +10,12 @@ from os.path import basename, exists
 from azkaban import Job, Project
 from azkaban.remote import Session
 
-TARGETS = ['camus']
+environment = os.environ.get('ENVIRONMENT', 'staging')
+
+if environment == 'production':
+    targets = ['camus']
+else:
+    targets = ['camus-staging']
 
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
 ch = lg.StreamHandler(sys.stdout)
@@ -88,15 +93,15 @@ def camus_project(project_name, target):
 
 def schedule_jobs(project_name, session):
     session.schedule_workflow(project_name, 'Import',                     date='01/01/2015', time="11,30,AM,UTC", period="1h",  concurrent=False)
-    session.schedule_workflow(project_name, 'Watermark',                  date='01/01/2015', time="12,10,AM,UTC", period="30m", concurrent=False)
-    session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,20,AM,UTC", period="1h",  concurrent=False)
+    session.schedule_workflow(project_name, 'Watermark',                  date='01/01/2015', time="12,20,AM,UTC", period="1h",  concurrent=False)
+    session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,25,AM,UTC", period="1h",  concurrent=False)
 
 def main():
     repo_root = os.getcwd()
     camus_jar = get_camus_version(repo_root)
     azkaban_auth = json.load(open(os.path.join(repo_root, 'camus-shopify', 'azkaban.json')))
 
-    for target in TARGETS:
+    for target in targets:
         project_name = target.title()
         project_zip = "%s.zip" % target
 
