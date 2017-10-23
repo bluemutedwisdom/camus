@@ -10,12 +10,7 @@ from os.path import basename, exists
 from azkaban import Job, Project
 from azkaban.remote import Session
 
-environment = os.environ.get('ENVIRONMENT', 'staging')
-
-if environment == 'production':
-    targets = ['camus']
-else:
-    targets = ['camus-staging']
+from environment import environment, targets
 
 formatter = lg.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', '%d/%m/%y %H:%M:%S')
 ch = lg.StreamHandler(sys.stdout)
@@ -117,8 +112,9 @@ def main():
         session.upload_project(project_name, project_zip)
         logger.info('Successfully uploaded %s zip file.' % project_name)
 
-        schedule_jobs(project_name, session)
-        logger.info('Successfully scheduled %s flow.' % project_name)
+        if environment == 'production':
+            schedule_jobs(project_name, session)
+            logger.info('Successfully scheduled %s flow.' % project_name)
 
 
 if __name__ == '__main__':

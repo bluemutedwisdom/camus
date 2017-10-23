@@ -2,19 +2,13 @@
 import os
 from fabric.api import env
 from fabric.operations import run, put
+from environment import targets
 
 env.forward_agent = True
 env.host_string = 'management2.ia131.data-chi.shopify.com'
 env.user = 'deploy'
 app_name = 'camus'
 base_path = '/u/apps'
-
-environment = os.environ.get('ENVIRONMENT', 'staging')
-
-if environment == 'production':
-    targets = ['camus']
-else:
-    targets = ['camus-staging']
 
 jar_path = os.path.join(os.getcwd(), 'camus-shopify', 'target', 'camus-shopify-0.1.0-shopify1.jar')
 
