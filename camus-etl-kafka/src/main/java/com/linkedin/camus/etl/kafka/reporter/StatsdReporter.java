@@ -62,9 +62,7 @@ public class StatsdReporter extends TimeReporter {
   public static void gauge(Configuration conf, String metric, Long value, String... tags) {
     if (conf.getBoolean(STATSD_ENABLED, false)) {
       StatsDClient statsd = getClient(conf);
-      System.out.println("Reporting gauge to statsd: metric=" + metric + "; value=" + value.toString() + "; tags=" + String.join(",", tags));
       statsd.gauge(metric, value, tags);
     }
-
   }
 }
