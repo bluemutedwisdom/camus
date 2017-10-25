@@ -120,15 +120,18 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
         }
       }
     }
+    else {
+      log.warn("Message does not have the field " + timestampField); // TODO
+    }
 
     // If timestamp wasn't set in the above block,
     // then set it to current time.
-    if (timestamp == 0) {
+    boolean timestampValid = (timestamp != 0);
+    if (! timestampValid) {
       log.warn("Couldn't find or parse timestamp field '" + timestampField
-          + "' in JSON message, defaulting to current time.");
+              + "' in JSON message, defaulting to current time."); // TODO remove this once we validate the metrics are published correctly
       timestamp = System.currentTimeMillis();
     }
-
-    return new CamusWrapper<String>(payloadString, timestamp);
+    return new CamusWrapper<String>(payloadString, timestamp, timestampValid);
   }
 }

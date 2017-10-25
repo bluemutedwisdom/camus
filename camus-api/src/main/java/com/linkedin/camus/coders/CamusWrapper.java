@@ -16,19 +16,21 @@ public class CamusWrapper<R> {
     private R record;
     private long timestamp;
     private MapWritable partitionMap;
+    private boolean parsedTimestamp;
 
     public CamusWrapper(R record) {
-        this(record, System.currentTimeMillis());
+        this(record, System.currentTimeMillis(), false);
     }
 
-    public CamusWrapper(R record, long timestamp) {
-        this(record, timestamp, "unknown_server", "unknown_service");
+    public CamusWrapper(R record, long timestamp, boolean parsedTimestamp) {
+        this(record, timestamp, "unknown_server", "unknown_service", parsedTimestamp);
     }
 
-    public CamusWrapper(R record, long timestamp, String server, String service) {
+    public CamusWrapper(R record, long timestamp, String server, String service, boolean parsedTimestamp) {
         this.record = record;
         this.timestamp = timestamp;
         this.partitionMap = new MapWritable();
+        this.parsedTimestamp = parsedTimestamp;
         partitionMap.put(new Text("server"), new Text(server));
         partitionMap.put(new Text("service"), new Text(service));
     }
@@ -71,4 +73,10 @@ public class CamusWrapper<R> {
         return partitionMap;
     }
 
+    /**
+     * Return true if the timestamp was parsed from the message, false otherwise.
+     */
+    public boolean getTimestampParseSuccess() {
+        return parsedTimestamp;
+    }
 }
