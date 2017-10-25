@@ -37,6 +37,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
   public static enum KAFKA_MSG {
     DECODE_SUCCESSFUL,
+    EVENT_TIMESTAMP_PARSE_FAILURE,
     SKIPPED_SCHEMA_NOT_FOUND,
     SKIPPED_OTHER
   };
@@ -50,6 +51,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
   private long totalBytes;
   private long readBytes = 0;
   private int numRecordsReadForCurrentPartition = 0;
+  private int numFailedToParseTimestamp = 0;
   private long bytesReadForCurrentPartition = 0;
 
   private boolean skipSchemaErrors = false;
@@ -142,6 +144,10 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     try {
       r = decoder.decode(message);
       mapperContext.getCounter(KAFKA_MSG.DECODE_SUCCESSFUL).increment(1);
+      if (! r.getTimestampParseSuccess()) {
+        this.numFailedToParseTimestamp++;
+        mapperContext.getCounter(KAFKA_MSG.EVENT_TIMESTAMP_PARSE_FAILURE).increment(1);
+      }
     } catch (SchemaNotFoundException e) {
       mapperContext.getCounter(KAFKA_MSG.SKIPPED_SCHEMA_NOT_FOUND).increment(1);
       if (!skipSchemaErrors) {
@@ -232,6 +238,8 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
       try {
 
         if (reader == null || !reader.hasNext()) {
+          StatsdReporter.gauge(mapperContext.getConfiguration(),"total.event-read-count", (long) numRecordsReadForCurrentPartition, key.statsdTags());
+          StatsdReporter.gauge(mapperContext.getConfiguration(),"total.failed-to-parse-timestamp", (long) numFailedToParseTimestamp, key.statsdTags());
           if (this.numRecordsReadForCurrentPartition != 0) {
             String timeSpentOnPartition =
                 this.periodFormatter.print(new Duration(this.startTime, System.currentTimeMillis()).toPeriod());
@@ -250,6 +258,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           // Reset start time, num of records read and bytes read
           this.startTime = System.currentTimeMillis();
           this.numRecordsReadForCurrentPartition = 0;
+          this.numFailedToParseTimestamp = 0;
           this.bytesReadForCurrentPartition = 0;
 
           if (maxPullHours > 0) {
@@ -355,7 +364,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           return true;
         }
         log.info("Records read : " + count);
-        StatsdReporter.gauge(mapperContext.getConfiguration(),"total.event-read-count", (long) count, key.statsdTags());
         count = 0;
         reader = null;
       } catch (Throwable t) {

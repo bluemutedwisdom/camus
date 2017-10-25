@@ -77,10 +77,16 @@ public class JsonWrappedStringMessageDecoder extends MessageDecoder<Message, Str
     messageJsonObject.add("key", keyJsonObject);
 
     long timestamp = getTimestamp(payloadJsonObject);
+    boolean timestampValid = (timestamp != 0);
+    // If timestamp wasn't set in the above block,
+    // then set it to current time.
+    if (! timestampValid) {
+      timestamp = System.currentTimeMillis();
+    }
 
     messageJsonObject.addProperty("timestamp", timestamp);
 
-    return new CamusWrapper<String>(messageJsonObject.toString(), timestamp);
+    return new CamusWrapper<String>(messageJsonObject.toString(), timestamp, timestampValid);
   }
 
   private JsonObject toJson(byte[] bytes) {
@@ -155,14 +161,6 @@ public class JsonWrappedStringMessageDecoder extends MessageDecoder<Message, Str
           log.error("Could not parse timestamp '" + timestampString + "' while decoding JSON message.");
         }
       }
-    }
-
-    // If timestamp wasn't set in the above block,
-    // then set it to current time.
-    if (timestamp == 0) {
-      log.warn("Couldn't find or parse timestamp field '" + timestampField
-          + "' in JSON message, defaulting to current time.");
-      timestamp = System.currentTimeMillis();
     }
     return timestamp;
   }
