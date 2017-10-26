@@ -240,6 +240,8 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         if (reader == null || !reader.hasNext()) {
           StatsdReporter.gauge(mapperContext.getConfiguration(),"total.event-read-count", (long) numRecordsReadForCurrentPartition, key.statsdTags());
           StatsdReporter.gauge(mapperContext.getConfiguration(),"total.failed-to-parse-timestamp", (long) numFailedToParseTimestamp, key.statsdTags());
+          // finished reading the partition, report a zero so we know the topic is no longer falling behind
+          StatsdReporter.gauge(mapperContext.getConfiguration(),"pull-max-time-reached", 0L, key.statsdTags());
           if (this.numRecordsReadForCurrentPartition != 0) {
             String timeSpentOnPartition =
                 this.periodFormatter.print(new Duration(this.startTime, System.currentTimeMillis()).toPeriod());

@@ -27,6 +27,7 @@ public class StatsdReporter extends TimeReporter {
   public void report(Job job, Map<String, Long> timingMap) throws IOException {
     super.report(job, timingMap);
     submitCountersToStatsd(job);
+    submitTimingToStatsd(job, timingMap);
   }
 
   private static StatsDClient getClient(Configuration conf) {
@@ -43,6 +44,18 @@ public class StatsdReporter extends TimeReporter {
         for (Counter counter : counterGroup) {
           statsd.gauge(counterGroup.getDisplayName() + "." + counter.getDisplayName(), counter.getValue());
         }
+      }
+    }
+  }
+
+  private void submitTimingToStatsd(Job job, Map<String, Long> timingMap) throws IOException {
+    Configuration conf = job.getConfiguration();
+    if (getStatsdEnabled(conf)) {
+      StatsDClient statsd = getClient(conf);
+      String[] times = new String[]{"pre-setup", "getSplits", "hadoop", "commit", "total"};
+      for (String key : times) {
+        // report time as seconds
+        statsd.gauge("run-time" + "." + key, timingMap.get("commit") / 1000);
       }
     }
   }
