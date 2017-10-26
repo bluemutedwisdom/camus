@@ -67,6 +67,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
   private long endTimeStamp = 0;
   private long curTimeStamp = 0;
   private long startTime = 0;
+  private boolean pullMaxTimeReached = false;
   private HashSet<String> ignoreServerServiceList = null;
   private PeriodFormatter periodFormatter = null;
 
@@ -207,9 +208,9 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
-
     if (System.currentTimeMillis() > maxPullTime
         && this.numRecordsReadForCurrentPartition >= RECORDS_TO_READ_AFTER_TIMEOUT) {
+      pullMaxTimeReached = true;
       String maxMsg = "at " + new DateTime(curTimeStamp).toString();
       log.info("Kafka pull time limit reached");
       statusMsg += " max read " + maxMsg;
@@ -240,6 +241,9 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         if (reader == null || !reader.hasNext()) {
           StatsdReporter.gauge(mapperContext.getConfiguration(),"total.event-read-count", (long) numRecordsReadForCurrentPartition, key.statsdTags());
           StatsdReporter.gauge(mapperContext.getConfiguration(),"total.failed-to-parse-timestamp", (long) numFailedToParseTimestamp, key.statsdTags());
+          long maxTime = (pullMaxTimeReached) ? 1L : 0L;
+          StatsdReporter.gauge(mapperContext.getConfiguration(),"pull-max-time-reached", maxTime, key.statsdTags());
+
           if (this.numRecordsReadForCurrentPartition != 0) {
             String timeSpentOnPartition =
                 this.periodFormatter.print(new Duration(this.startTime, System.currentTimeMillis()).toPeriod());
@@ -260,6 +264,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           this.numRecordsReadForCurrentPartition = 0;
           this.numFailedToParseTimestamp = 0;
           this.bytesReadForCurrentPartition = 0;
+          this.pullMaxTimeReached = false;
 
           if (maxPullHours > 0) {
             endTimeStamp = 0;

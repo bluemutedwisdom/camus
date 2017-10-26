@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import com.linkedin.camus.etl.kafka.reporter.StatsdReporter;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -244,6 +245,8 @@ public class CamusJob extends Configured implements Tool {
     EmailClient.setup(props);
 
     Job job = createJob(props);
+    StatsdReporter.gauge(job.getConfiguration(), "camus-started", 1L);
+
     if (getLog4jConfigure(job)) {
       DOMConfigurator.configure("log4j.xml");
     }
