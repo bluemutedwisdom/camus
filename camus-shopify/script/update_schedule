@@ -66,6 +66,17 @@ def lad_monitor_job(target):
     monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/%(target)s/shared/camus.properties"'
     return monitor_cmd % {'target': target}
 
+def deduplicate_folder(target):
+    monitor_cmd = 'bash -c "'
+    monitor_cmd += 'HADOOP_USER_NAME=deploy && '
+    monitor_cmd += 'spark-submit --class com.linkedin.camus.shopify.DedupFolder '
+    monitor_cmd += '--deploy-mode cluster '
+    monitor_cmd += '--master yarn '
+    monitor_cmd += '--conf spark.default.parallelism=1 ' # TODO set actual config values
+    monitor_cmd += '/u/apps/%(target)s/camus-shopify-0.1.0-shopify1.jar '
+
+    return monitor_cmd % {'target': target}
+
 def camus_project(project_name, target, env):
     project = Project(project_name)
 
@@ -85,6 +96,11 @@ def camus_project(project_name, target, env):
                     Job({'failure.emails': failure_email,
                          'type': 'command',
                          'command': lad_monitor_job(target)
+                         }))
+    project.add_job("DedupFolder",
+                    Job({'failure.emails': failure_email,
+                         'type': 'command',
+                         'command': deduplicate_folder(target)
                          }))
 
     return project
