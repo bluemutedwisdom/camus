@@ -158,7 +158,7 @@ class TestDedupFolder extends FunSuite with BeforeAndAfter with BeforeAndAfterAl
     data.repartition(1).write.option("compression", "gzip").text(dir)
 
     // deduplicate
-    DedupFolder.dedup(spark, TextWriter(), fs, dir, backupDir)
+    DedupFolder.dedup(spark, new TextWriter(), fs, dir, backupDir)
 
     // test the data was deduplicated
     val deduplicated = spark.read.text(dir)

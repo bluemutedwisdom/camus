@@ -27,7 +27,7 @@ object DedupFolder {
     argsParser.parse(args, Params()) match {
       case Some(params) =>
         val backupPath = params.backupPath.replace("/$", "") // remove trailing slash
-      val targetPaths = params.targetPaths
+        val targetPaths = params.targetPaths
         if (!backupPath.startsWith("/")) {
           throw new Exception(s"Backup path file location $backupPath must be absolute.")
         }
@@ -63,7 +63,7 @@ object DedupFolder {
     // Deduplicate each path
     paths.foreach(path => {
       log.info(s"Processing $path")
-      dedup(spark, TextWriter(), fs, path, backupPath)
+      dedup(spark, new TextWriter(), fs, path, backupPath)
     })
   }
 
@@ -116,10 +116,6 @@ class TextWriter {
   def write(df: DataFrame, path: String): Unit = {
     df.write.option("compression", "gzip").text(path)
   }
-}
-
-object TextWriter {
-  def apply(): TextWriter = new TextWriter()
 }
 
 class BackupException(val message: String) extends Exception(message)
