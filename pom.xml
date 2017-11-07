@@ -249,7 +249,7 @@
 	  <target>1.6</target>
 	  <encoding>UTF-8</encoding>
 	  <compilerArgs>
-	    <arg>-J-Djava.awt.headless=true -Dfile.encoding=UTF-8 -Dmapreduce.map.java.opts="-Dfile.encoding=UTF-8"</arg>
+	    <arg>-J-Djava.awt.headless=true</arg>
 	  </compilerArgs>
 	</configuration>
       </plugin>
