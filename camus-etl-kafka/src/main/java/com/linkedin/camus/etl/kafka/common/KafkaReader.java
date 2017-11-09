@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.linkedin.camus.shopify.CamusLogger;
 import kafka.api.PartitionFetchInfo;
 import kafka.common.TopicAndPartition;
 import kafka.javaapi.FetchRequest;
@@ -21,7 +22,6 @@ import kafka.message.Message;
 import kafka.message.MessageAndOffset;
 
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
 
 import com.linkedin.camus.etl.kafka.CamusJob;
 import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
@@ -35,7 +35,7 @@ import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
  */
 public class KafkaReader {
   // index of context
-  private static Logger log = Logger.getLogger(KafkaReader.class);
+  private static CamusLogger log = new CamusLogger(KafkaReader.class);
   private EtlRequest kafkaRequest = null;
   private SimpleConsumer simpleConsumer = null;
 

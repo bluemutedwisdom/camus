@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.linkedin.camus.shopify.CamusLogger;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,7 +36,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
   private TaskAttemptContext context;
   private final RecordWriterProvider recordWriterProvider;
-  private Logger log;
+  private CamusLogger log;
 
   private void mkdirs(FileSystem fs, Path path) throws IOException {
     if (!fs.exists(path.getParent())) {
@@ -82,7 +83,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
     }
     workingFileMetadataPattern = Pattern.compile(
         "data\\.([^\\.]+)\\.([\\d_]+)\\.(\\d+)\\.([^\\.]+)-m-\\d+" + recordWriterProvider.getFilenameExtension());
-    this.log = log;
+    this.log = new CamusLogger(log);
   }
 
   @Override
