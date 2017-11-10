@@ -33,8 +33,7 @@ public class CamusLogger {
     }
 
     public void debug(String message) {
-        println(message, "DEBUG");
-        this.underlying.info(message);
+        this.underlying.debug(message);
     }
 
     public void info(String message) {
@@ -49,6 +48,6 @@ public class CamusLogger {
 
     public void error(String message) {
         println(message, "ERROR");
-        this.underlying.warn(message);
+        this.underlying.error(message);
     }
 }
