@@ -3,6 +3,7 @@ package com.linkedin.camus.shopify
 import java.io.FileInputStream
 import java.util.Properties
 
+import com.linkedin.camus.etl.kafka.reporter.StatsdReporter
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.Logger
@@ -18,7 +19,7 @@ object LateArrivingDataMonitor {
   val argsParser = new OptionParser[Params]("com.linkedin.camus.shopify.LateArrivingDataMonitor") {
     head("Camus Late Arriving Data Checker", "")
     note(
-      "This Job checks for late arrivig data in Camus drops.")
+      "This Job checks for late arriving data in Camus drops.")
     help("help") text "Prints this usage text"
 
     opt[String]('c', "camus-properties-file") required() valueName "<path>" action { (x, p) =>
@@ -39,11 +40,20 @@ object LateArrivingDataMonitor {
     var violationFound = false
     foldersToCheck.foreach(
       folder => {
+        log.info(s"Checking $folder")
         val camusDrop = new CamusHourlyDrop(new Path(folder), fs)
 
         if (camusDrop.hasFlag && camusDrop.isFlagViolated) {
           violationFound = true
           log.error(s"Violation found in ${camusDrop.path}")
+          try {
+            val count = camusDrop.violationCount
+            log.error(s"=> late-arriving records for dir ${camusDrop.topicDir} in ${camusDrop.path}: $count")
+            StatsdReporter.gauge(properties, "late-arriving-data", 1L, s"directory:${camusDrop.topicDir}")
+          }
+          catch {
+            case e: Exception => log.error(s"Could not get count of violations for $folder: $e")
+          }
         }
       }
     )
