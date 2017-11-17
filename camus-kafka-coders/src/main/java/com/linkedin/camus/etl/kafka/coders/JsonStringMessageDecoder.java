@@ -101,7 +101,7 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
         try {
           timestamp = new DateTime(timestampString).getMillis();
         } catch (IllegalArgumentException e) {
-          log.error("Could not parse timestamp '" + timestampString + "' as ISO-8601 while decoding JSON message.");
+          // do nothing
         }
       }
       // Otherwise parse the timestamp as a string in timestampFormat.
@@ -113,10 +113,10 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
           try {
             timestamp = new SimpleDateFormat(timestampFormat).parse(timestampString).getTime();
           } catch (ParseException pe) {
-            log.error("Could not parse timestamp '" + timestampString + "' while decoding JSON message.");
+            // do nothing
           }
         } catch (Exception ee) {
-          log.error("Could not parse timestamp '" + timestampString + "' while decoding JSON message.");
+          // do nothing
         }
       }
     }

@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
+import com.linkedin.camus.shopify.CamusLogger;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -14,7 +15,6 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import com.linkedin.camus.coders.CamusWrapper;
@@ -29,7 +29,7 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
   private Writer errorWriter = null;
   private String currentTopic = "";
   private long beginTimeStamp = 0;
-  private static Logger log = Logger.getLogger(EtlMultiOutputRecordWriter.class);
+  private static CamusLogger log = new CamusLogger(EtlMultiOutputRecordWriter.class);
   private final Counter topicSkipOldCounter;
 
   private HashMap<String, RecordWriter<IEtlKey, CamusWrapper>> dataWriters =
