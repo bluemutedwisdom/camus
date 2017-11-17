@@ -150,7 +150,8 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
     // write a list of files that were written
     ArrayList<String> pathsWrittenList = new ArrayList(pathsWritten);
     Collections.sort(pathsWrittenList);
-    OutputStream os = fs.create(new Path(super.getWorkPath(), EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX));
+    OutputStream os = fs.create(new Path(super.getWorkPath(),
+            EtlMultiOutputFormat.getUniqueFile(context, EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX, "")));
     BufferedWriter br = new BufferedWriter( new OutputStreamWriter( os, "UTF-8" ) );
     for (String writtenToPath : pathsWrittenList) {
       br.write(writtenToPath);

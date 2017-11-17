@@ -50,8 +50,10 @@ class CamusExecutions(properties: Properties, fs: FileSystem) {
 
   def lastRunDirs(numRuns: Int): List[Path] = camusReader.mostRecentRuns(new Path(historyFolder), numRuns)
 
+  private def isDirsWrittenList(path: Path) = path.getName.startsWith(EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX)
+
   def droppedFoldersInRuns(camusRunPaths: List[Path]): Seq[String] = {
-    val allPathsValid = camusRunPaths.forall(path => fs.exists(new Path(path, EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX)))
+    val allPathsValid = camusRunPaths.forall(path => fs.listStatus(path).exists(f => isDirsWrittenList(f.getPath)))
     if (! allPathsValid) {
       throw new Exception("Some executions paths do not contain expected dirs lists.")
     }
@@ -61,10 +63,17 @@ class CamusExecutions(properties: Properties, fs: FileSystem) {
     camusRunPaths.foreach({
       runPath =>
         log.info(s"Collecting directories written to in run $runPath")
-        val stream = fs.open(new Path(runPath, EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX))
-        val readLines = Stream.cons(stream.readLine, Stream.continually( stream.readLine))
-        readLines.takeWhile(_ != null).foreach(line => pathsToCheck.add(line))
-        stream.close()
+        // for each execution there will be one file per map task
+        val dirsWrittenToByTasks = fs.listStatus(runPath).map(f => f.getPath).filter(isDirsWrittenList)
+        log.info(s"Found ${dirsWrittenToByTasks.length} files with directory lists in $runPath.")
+        // collect all the dirs from all the tasks into a single set
+        dirsWrittenToByTasks.foreach({
+          dirsWrittenToByTask =>
+            val stream = fs.open(dirsWrittenToByTask)
+            val readLines = Stream.cons(stream.readLine, Stream.continually(stream.readLine))
+            readLines.takeWhile(_ != null).foreach(line => pathsToCheck.add(line))
+            stream.close()
+        })
     })
     pathsToCheck.toList.sorted
   }
