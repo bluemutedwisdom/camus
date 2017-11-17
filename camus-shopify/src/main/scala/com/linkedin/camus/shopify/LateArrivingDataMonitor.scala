@@ -115,6 +115,7 @@ object LateArrivingDataMonitor {
         }
       case None =>
         log.error("missing arguments, use --help")
+        sys.exit(1)
     }
   }
 }
