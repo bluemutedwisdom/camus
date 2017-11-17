@@ -81,7 +81,7 @@ object CamusPartitionChecker {
     * @param camusRunPath the camus run Path folder to use
     * @return a map of topic -> Seq[(year, month, day, hour)]
     */
-  def getTopicsAndHoursToFlag(camusRunPath: Path, backfill: Boolean = false): Map[String, Seq[(Int, Int, Int, Int)]] = {
+  def getTopicsAndHoursToFlag(camusRunPath: Path, delayMilli: Long = 0L, backfill: Boolean = false): Map[String, Seq[(Int, Int, Int, Int)]] = {
     var whitelist = props.getProperty(WHITELIST_TOPICS, ".*")
     if (whitelist.isEmpty) whitelist = ".*"
 
@@ -93,12 +93,12 @@ object CamusPartitionChecker {
     val currentOffsets: Seq[EtlKey] = camusReader.readEtlKeys(camusReader.offsetsFiles(camusRunPath))
     val previousOffsets: Seq[EtlKey] = camusReader.readEtlKeys(camusReader.previousOffsetsFiles(camusRunPath))
 
-    val currentTopicsAndOldestTimes = camusReader.topicsAndOldestTimes(currentOffsets)
+    val currentTopicsAndOldestTimes = camusReader.topicsAndOldestTimes(currentOffsets).mapValues(currentOffset => currentOffset - delayMilli)
     val previousTopicsAndOldestTimes = if (backfill) {
       log.info(s"Running backfill version, updating folders since the 'beggining of times': $EARLIEST_OF_TIMES")
       currentTopicsAndOldestTimes.mapValues[Long]((currentTime) => EARLIEST_OF_TIMES)
     } else {
-      camusReader.topicsAndOldestTimes(previousOffsets)
+      camusReader.topicsAndOldestTimes(previousOffsets).mapValues(previousOffset => previousOffset - delayMilli)
     }
 
     val finalMap = previousTopicsAndOldestTimes.foldLeft(Map.empty[String, Seq[(Int, Int, Int, Int)]])(
@@ -134,7 +134,7 @@ object CamusPartitionChecker {
           } else
             log.info(s"DryRun - Flag would have been created: ${dir}/${flag}")
         } else
-          log.warn(s"Couldn't find $topic folder in $partitionPath. Can't flag it.")
+          log.warn(s"Folder does not exist for hour $partitionPath. Can't flag it.")
       }
     }
   }
@@ -144,6 +144,7 @@ object CamusPartitionChecker {
                     hadoopCoreSitePath: String = "/etc/hadoop/conf/core-site.xml",
                     hadoopHdfsSitePath: String = "/etc/hadoop/conf/hdfs-site.xml",
                     flag: String = "_IMPORTED",
+                    delayHours: Int = 0,
                     dryRun: Boolean = false,
                     backfill: Boolean = false)
 
@@ -174,6 +175,10 @@ object CamusPartitionChecker {
     } validate { f =>
       if ((! f.isEmpty) && (f.matches("_[a-zA-Z0-9-_]+"))) success else failure("Incorrect flag file name")
     } text ("Flag file to be used (defaults to '_IMPORTED'.")
+
+    opt[Int]("delay-hours") optional() action { (x, p) =>
+      p.copy(delayHours = x)
+    } text ("Delay watermarking by X hours prior to current stable offset")
 
     opt[Unit]("dry-run") optional() action { (_, p) =>
       p.copy(dryRun = true)
@@ -230,8 +235,14 @@ object CamusPartitionChecker {
           if (null == camusPathToCheck)
             System.exit(1)
 
+          if (params.delayHours > 0){
+            log.warn(s"Watermarking delayed by ${params.delayHours} from stable offsets.")
+          }
           log.info("Checking job correctness and computing partitions to flag as imported.")
-          val topicsAndHours = getTopicsAndHoursToFlag(camusPathToCheck, params.backfill)
+          val topicsAndHours = getTopicsAndHoursToFlag(
+            camusPathToCheck,
+            (params.delayHours * 60 * 60 * 1000).toLong, // convert hours to milliseconds
+            params.backfill)
 
           log.info("Job is correct, flag imported partitions.")
           flagFullyImportedPartitions(params.flag, params.dryRun, topicsAndHours)
@@ -239,7 +250,7 @@ object CamusPartitionChecker {
           log.info("Done.")
         } catch {
           case e: Exception => {
-            log.error("An error occured during execution.", e)
+            log.error("An error occurred during execution.", e)
             sys.exit(1)
           }
         }

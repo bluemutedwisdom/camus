@@ -72,14 +72,22 @@ class CamusStatusReader(fs: FileSystem) {
    * @return the most recent run path
    */
   def mostRecentRun(path: Path): Path = {
-      // Filter folders with format YYYY-MM-DD-HH-MM-SS
-      // Sort folders by name DESC
-      val executions = fs.listStatus(path, new RegexpPathFilter("[0-9]{4}(-[0-9]{2}){5}")).map(_.getPath)
-                         .sortWith((f1, f2) => f1.getName().compareTo(f2.getName()) < 0)
-      if (executions.length > 0)
-        executions(executions.length - 1)
-      else
-        throw new IllegalArgumentException("Given Path is doesn't contain camus-run folders.")
+    mostRecentRuns(path).head
+  }
+
+  /**
+   * Finds the most recent runs in a camus-history folder
+   * @return a list of directories for the most recent runs
+   */
+  def mostRecentRuns(path: Path, count: Int = 1): List[Path] = {
+    // Filter folders with format YYYY-MM-DD-HH-MM-SS
+    // Sort folders by name DESC
+    val executions = fs.listStatus(path, new RegexpPathFilter("[0-9]{4}(-[0-9]{2}){5}")).map(_.getPath)
+      .sortWith((f1, f2) => f1.getName().compareTo(f2.getName()) > 0)
+    if (executions.length >= 0)
+      executions.take(count).toList
+    else
+      throw new IllegalArgumentException("Given Path is doesn't contain camus-run folders.")
   }
 
 }

@@ -4,6 +4,7 @@ import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import java.util.Map;
 import java.io.IOException;
+import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -32,6 +33,12 @@ public class StatsdReporter extends TimeReporter {
 
   private static StatsDClient getClient(Configuration conf) {
     return new NonBlockingStatsDClient("Camus", getStatsdHost(conf), getStatsdPort(conf),
+            new String[] { "camus:counters" });
+  }
+
+  private static StatsDClient getClient(Properties props) {
+    return new NonBlockingStatsDClient("Camus", props.getProperty(STATSD_HOST),
+            Integer.parseInt(props.getProperty(STATSD_PORT, "8125")),
             new String[] { "camus:counters" });
   }
 
@@ -74,6 +81,12 @@ public class StatsdReporter extends TimeReporter {
   public static void gauge(Configuration conf, String metric, Long value, String... tags) {
     if (conf.getBoolean(STATSD_ENABLED, false)) {
       StatsDClient statsd = getClient(conf);
+      statsd.gauge(metric, value, tags);
+    }
+  }
+  public static void gauge(Properties props, String metric, Long value, String... tags) {
+    if (!props.getProperty(STATSD_ENABLED, "false").equals("false")) {
+      StatsDClient statsd = getClient(props);
       statsd.gauge(metric, value, tags);
     }
   }

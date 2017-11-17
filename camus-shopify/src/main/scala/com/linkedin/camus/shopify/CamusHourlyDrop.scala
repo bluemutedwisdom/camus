@@ -1,5 +1,6 @@
 package com.linkedin.camus.shopify
 
+import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 class CamusHourlyDrop(folderPath: Path, fileSystem: FileSystem) {
@@ -20,5 +21,19 @@ class CamusHourlyDrop(folderPath: Path, fileSystem: FileSystem) {
       max
   }
 
+  def topicDir: String = {
+    new Path(path.toString.replace(EtlMultiOutputFormat.ETL_DESTINATION_PATH, ""))
+      .getParent.getParent.getParent.getParent.getName
+  }
+
   def isFlagViolated: Boolean = lastFileWrittenAt > flagWrittenAt
+
+  def violationCount: Long = {
+    val flagTime = flagWrittenAt
+    fs.listStatus(path).
+      filter(status => status.getPath.getName != FLAG_NAME && status.getModificationTime > flagTime).
+      map(status => status.getPath.getName).
+      map(name => name.split("\\.")(3).toLong). // this relies on how we format file names in EtlMultiOutputCommitter.getPartitionedPath
+      sum
+  }
 }

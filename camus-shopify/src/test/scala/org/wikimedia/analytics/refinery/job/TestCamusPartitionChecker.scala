@@ -138,6 +138,42 @@ class TestCamusPartitionChecker extends FlatSpec with Matchers with BeforeAndAft
       o.size should equal (0)
   }
 
+  it should "get correct hours to flag" in {
+    val folder: String = camusHistoryTestFolder + "/" + hourSpanRunFolder
+    val path: Path = new Path(folder)
+
+    // correct Whitelist/blacklist config
+    CamusPartitionChecker.props.setProperty(CamusPartitionChecker.WHITELIST_TOPICS,
+      "webrequest_maps,webrequest_text,webrequest_upload,webrequest_misc")
+
+    val topicsAndHours = CamusPartitionChecker.getTopicsAndHoursToFlag(path)
+
+    topicsAndHours.size should equal (4)
+    topicsAndHours("webrequest_maps").size should equal (0)
+    topicsAndHours("webrequest_text").toList should equal (List((2015, 10, 2, 7)))
+    topicsAndHours("webrequest_upload").toList should equal (List((2015, 10, 2, 7)))
+    topicsAndHours("webrequest_misc").toList should equal (List((2015, 10, 2, 7)))
+  }
+
+  it should "get correct hours to flag with a delay window" in {
+    val folder: String = camusHistoryTestFolder + "/" + hourSpanRunFolder
+    val path: Path = new Path(folder)
+
+    // correct Whitelist/blacklist config
+    CamusPartitionChecker.props.setProperty(CamusPartitionChecker.WHITELIST_TOPICS,
+      "webrequest_maps,webrequest_text,webrequest_upload,webrequest_misc")
+
+    val topicsAndHours = CamusPartitionChecker.getTopicsAndHoursToFlag(path, 1L * 60 * 60 * 1000)
+
+    topicsAndHours.size should equal (4)
+    topicsAndHours("webrequest_maps").size should equal (0)
+    topicsAndHours("webrequest_text").toList should equal (List((2015, 10, 2, 6)))
+    topicsAndHours("webrequest_upload").toList should equal (List((2015, 10, 2, 6)))
+    topicsAndHours("webrequest_misc").toList should equal (List((2015, 10, 2, 6)))
+    // note the difference between previous and current test is that we move the previous stable offset by an hour also
+    // this results in a full shift of hours to check
+  }
+
   it should "doesn't fail getting topics and hours in an error camus-run folder" in {
     // Original test was checking for failures, this one makes sure it won't fail
     val folder: String = camusHistoryTestFolder + "/" + failedRunFolder
