@@ -51,6 +51,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
   public static final DateTimeFormatter FILE_DATE_FORMATTER = DateUtils.getDateTimeFormatter("YYYYMMddHH");
   public static final String OFFSET_PREFIX = "offsets";
+  public static final String PATHS_WRITTEN_PREFIX = "dirs-written-to";
   public static final String ERRORS_PREFIX = "errors";
   public static final String COUNTS_PREFIX = "counts";
 

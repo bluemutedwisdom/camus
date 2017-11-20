@@ -1,12 +1,8 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +29,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
   private HashMap<String, EtlCounts> counts = new HashMap<String, EtlCounts>();
   private HashMap<String, EtlKey> offsets = new HashMap<String, EtlKey>();
   private HashMap<String, Long> eventCounts = new HashMap<String, Long>();
+  private HashSet<String> pathsWritten = new HashSet<String>();
 
   private TaskAttemptContext context;
   private final RecordWriterProvider recordWriterProvider;
@@ -109,12 +106,16 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
           Path dest = new Path(baseOutDir, partitionedFile);
 
-          if (!fs.exists(dest.getParent())) {
-            mkdirs(fs, dest.getParent());
+          Path parentDestPath = dest.getParent();
+          if (!fs.exists(parentDestPath)) {
+            mkdirs(fs, parentDestPath);
           }
 
           commitFile(context, f.getPath(), dest);
           log.info("Moved file from: " + f.getPath() + " to: " + dest);
+
+          // record the fact that we committed data to a path
+          pathsWritten.add(parentDestPath.toString());
 
           if (EtlMultiOutputFormat.isRunTrackingPost(context)) {
             count.writeCountsToMap(allCountObject, fs, new Path(workPath, EtlMultiOutputFormat.COUNTS_PREFIX + "."
@@ -146,6 +147,19 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
       offsetWriter.append(offsets.get(s), NullWritable.get());
     }
     offsetWriter.close();
+
+    // write a list of files that were written
+    ArrayList<String> pathsWrittenList = new ArrayList(pathsWritten);
+    Collections.sort(pathsWrittenList);
+    OutputStream os = fs.create(new Path(super.getWorkPath(),
+            EtlMultiOutputFormat.getUniqueFile(context, EtlMultiOutputFormat.PATHS_WRITTEN_PREFIX, "")));
+    BufferedWriter br = new BufferedWriter( new OutputStreamWriter( os, "UTF-8" ) );
+    for (String writtenToPath : pathsWrittenList) {
+      br.write(writtenToPath);
+      br.write("\n");
+    }
+    br.close();
+
     super.commitTask(context);
   }
 
