@@ -56,7 +56,7 @@ def camus_watemark_job(target):
     camus_watermark_cmd = 'bash -c "'
     camus_watermark_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
     camus_watermark_cmd += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/%(target)s/shared/camus.properties"'
+    camus_watermark_cmd += 'org.wikimedia.analytics.refinery.job.CamusPartitionChecker -c /u/apps/%(target)s/shared/camus.properties --delay-hours 4"'
     return camus_watermark_cmd % {'target': target}
 
 def lad_monitor_job(target):
@@ -82,7 +82,7 @@ def camus_project(project_name, target, env):
                          'command': camus_watemark_job(target)
                          }))
     project.add_job("Late-Arriving-Data Monitor",
-                    Job({'failure.emails': failure_email,
+                    Job({'failure.emails': None,  # never send emails to pagerduty for this alert
                          'type': 'command',
                          'command': lad_monitor_job(target)
                          }))
