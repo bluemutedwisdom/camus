@@ -63,7 +63,7 @@ def lad_monitor_job(target):
     monitor_cmd = 'bash -c "'
     monitor_cmd += 'java -Xms1G -Xmx2G -DHADOOP_USER_NAME=deploy -Dlog4j.configuration=file:/u/apps/%(target)s/shared/log4j.xml '
     monitor_cmd += '-cp $(hadoop classpath):/u/apps/%(target)s/current/camus-shopify-0.1.0-shopify1.jar:/etc/camus:/etc/hadoop/conf '
-    monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/%(target)s/shared/camus.properties -t window"'
+    monitor_cmd += 'com.linkedin.camus.shopify.LateArrivingDataMonitor -c /u/apps/%(target)s/shared/camus.properties -t runs -r 1"'
     return monitor_cmd % {'target': target}
 
 def camus_project(project_name, target, env):
