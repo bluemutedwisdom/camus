@@ -112,6 +112,7 @@ def schedule_jobs(project_name, session):
     session.schedule_workflow(project_name, 'Import',                     date='01/01/2015', time="11,30,AM,UTC", period="1h",  concurrent=False)
     session.schedule_workflow(project_name, 'Watermark',                  date='01/01/2015', time="12,20,AM,UTC", period="1h",  concurrent=False)
     session.schedule_workflow(project_name, 'Late-Arriving-Data Monitor', date='01/01/2015', time="12,25,AM,UTC", period="1h",  concurrent=False)
+    session.schedule_workflow(project_name, 'CamusUploadToGCS',           date='01/01/2015', time="12,30,AM,UTC", period="1h",  concurrent=False)
 
 def main():
     repo_root = os.getcwd()

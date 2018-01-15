@@ -8,10 +8,10 @@ import logging
 
 
 HDFS_PREFIX = "hdfs://hadoop-production"
-GCS_PREFIX = "gs://longboat"
+GCS_PREFIX = "gs://raw-kafka"
 MIN_FILES_FOR_DIST = 8  # use regular copy for small number of files
 DIST_MAPPERS = 32  # allowed parallelism for distributed copy
-DIST_QUEUE = 'root.default'  # yarn queue for distributed copy
+DIST_QUEUE = 'production.ignore'  # yarn queue for distributed copy
 DIST_MEM_MB = 4000  # memomory limit for distributed copy
 UPLOADED_FLAG = "_UPLOADED"  # flag to place inside a camus execution folder to mark it as fully uploaded to gcs
 
