@@ -50,4 +50,12 @@ class TestCamusHourlyDrop extends FunSuite {
     fs.setTimes(dataPath, 1400000000000L, 0)
     assert(drop.isFlagViolated)
   }
+
+  test("hourMilli") {
+    val tp = camusHistoryTestFolder + "/topics/webrequest.text/2014/05/13/16"
+    val timestamp = 1399996800000L  // May 13, 2014 16:00:00
+    val drop = new CamusHourlyDrop(new Path(tp), fs)
+    assert(drop.hourMilli == timestamp)
+  }
+
 }

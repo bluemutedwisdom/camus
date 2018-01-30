@@ -118,6 +118,41 @@ object CamusPartitionChecker {
     finalMap
   }
 
+
+  def writeHighWatermarkForTopic(topic:String, newWatermark: Long): Unit = {
+    val topicDir = new Path(s"${props.getProperty("etl.watermark.path")}", topic)
+    val newWatermarkPath = new Path(topicDir, newWatermark.toString)
+
+    // Create the watermark directory for topic if does not exist
+    if (!fs.exists(topicDir) || !fs.isDirectory(topicDir)) {
+      fs.mkdirs(topicDir)
+    }
+
+    fs.listStatus(topicDir).headOption match {
+      case Some(previousWatermarkPath) =>
+        // sanity check that the new watermark is higher than the previous one
+        val previousWatermark = previousWatermarkPath.getPath.getName.toLong
+        if (previousWatermark < newWatermark) {
+          fs.rename(previousWatermarkPath.getPath, newWatermarkPath)
+        }
+        else {
+          log.warn(s"Existing watermark $previousWatermark is larger than $newWatermark for topic $topic. Skipping.")
+        }
+      case _ => fs.create(newWatermarkPath)
+        log.info(s"Wrote watermark $newWatermark for topic $topic")
+    }
+  }
+
+  def writeHighWatermarkByTopic(topicsAndHours: Map[String, Seq[(Int, Int, Int, Int)]], dryRun: Boolean = false): Map[String, Long] = {
+    // figure out the largest watermark out of all the hours that were watermarked
+    val topicToHighWM = topicsAndHours.mapValues(
+      _.map(t => new DateTime(t._1, t._2, t._3, t._4, 0, 0, 0, DateTimeZone.UTC).getMillis)
+        .max
+    )
+    topicToHighWM.foreach({case (topic, newWatermark) => writeHighWatermarkForTopic(topic, newWatermark)})
+    topicToHighWM
+  }
+
   def flagFullyImportedPartitions(flag: String,
                                   dryRun: Boolean,
                                   topicsAndHours: Map[String, Seq[(Int, Int, Int, Int)]]): Unit = {
@@ -126,8 +161,8 @@ object CamusPartitionChecker {
         val dir = partitionDirectory(
           props.getProperty(PARTITION_BASE_PATH), topic, year, month, day, hour)
         val partitionPath: Path = new Path(dir)
+        val flagPath = new Path(s"$dir/$flag")
         if (fs.exists(partitionPath) && fs.isDirectory(partitionPath)) {
-          val flagPath = new Path(s"${dir}/${flag}")
           if (! fs.exists(flagPath)) {
             if (! dryRun) {
               fs.create(flagPath)
@@ -138,8 +173,18 @@ object CamusPartitionChecker {
           else {
             log.warn(s"Flag already exists: ${flagPath.toString}")
           }
-        } else
-          log.warn(s"Folder does not exist for hour $partitionPath. Can't flag it.")
+        } else {
+          if (! dryRun) {
+            fs.mkdirs(partitionPath)
+            log.info(s"Empty data partition created: $dir")
+            fs.create(flagPath)
+            log.info(s"Flag created: ${dir}/${flag}")
+          }
+          else {
+            log.info(s"DryRun - Empty data partition would have been created: $dir")
+            log.info(s"DryRun - Flag would have been created: ${dir}/${flag}")
+          }
+        }
       }
     }
   }
@@ -251,6 +296,9 @@ object CamusPartitionChecker {
 
           log.info("Job is correct, flag imported partitions.")
           flagFullyImportedPartitions(params.flag, params.dryRun, topicsAndHours)
+
+          log.info("Write topic watermarks")
+          writeHighWatermarkByTopic(topicsAndHours)
 
           log.info("Done.")
         } catch {
